@@ -36,7 +36,7 @@
   p { margin: 0 0 10px; }
 
   /* Tab bar */
-  nav { position: fixed; inset: auto 0 0 0; display: flex; justify-content: center; gap: 48px; padding: 6px 0 calc(env(safe-area-inset-bottom) + 6px);
+  nav { position: fixed; inset: auto 0 0 0; display: flex; justify-content: center; gap: 28px; padding: 6px 0 calc(env(safe-area-inset-bottom) + 6px);
     background: color-mix(in srgb, var(--card) 80%, transparent); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
     border-top: .5px solid var(--sep); z-index: 10; }
   nav button { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; color: var(--sub); font: 500 10px -apple-system, system-ui, sans-serif; padding: 4px 16px; cursor: pointer; }
@@ -75,10 +75,12 @@
   .seg { display: flex; background: var(--fill); border-radius: 9px; padding: 2px; margin-bottom: 14px; }
   .seg button { flex: 1; border: 0; background: none; color: var(--text); font: 500 13px -apple-system, system-ui, sans-serif; padding: 7px 4px; border-radius: 7px; cursor: pointer; }
   .seg button[aria-pressed=true] { background: var(--seg-on); box-shadow: 0 3px 8px #0000001f, 0 3px 1px #0000000a; font-weight: 600; }
-  button.act { display: block; width: 100%; background: var(--tint); color: var(--on-tint); border: 0; border-radius: 12px; padding: 13px; font: 600 17px -apple-system, system-ui, sans-serif; margin-top: 12px; cursor: pointer; }
-  button.act:disabled { background: var(--fill); color: var(--sub); }
-  button.link { background: none; border: 0; color: var(--tint); font: inherit; font-size: 15px; padding: 8px 0 0; cursor: pointer; }
-  button.link.danger { color: var(--red); }
+  .act { display: block; text-align: center; width: 100%; background: var(--tint); color: var(--on-tint); border: 0; border-radius: 12px; padding: 13px; font: 600 17px -apple-system, system-ui, sans-serif; margin-top: 12px; cursor: pointer; }
+  .act:disabled { background: var(--fill); color: var(--sub); }
+  textarea { width: 100%; font: inherit; font-size: 15px; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--fill); color: var(--text); resize: vertical; outline: none; }
+  .verdict { border-radius: 12px; padding: 18px 16px; margin-bottom: 12px; font-size: 22px; font-weight: 700; text-align: center; }
+  .link { display: inline-block; background: none; border: 0; color: var(--tint); font: inherit; font-size: 15px; padding: 8px 0 0; cursor: pointer; }
+  .link.danger { color: var(--red); }
   button:active { opacity: .6; }
 
   /* Plan */
@@ -107,6 +109,8 @@
 <nav role="tablist">
   <button role="tab" id="t-foods" onclick="tab('foods')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19l8-8"/></svg>Foods</button>
+  <button role="tab" id="t-scan" onclick="tab('scan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>Scan</button>
   <button role="tab" id="t-plan" onclick="tab('plan')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>My Plan</button>
 </nav>
@@ -343,6 +347,109 @@ function planView() {
   return html + `<div class="footer">Your data stays on this device.</div>`;
 }
 
+// ---- Label scanner: find FODMAP ingredients in an ingredients list (English + Spanish) ----
+// Patterns are lowercase without accents; `minor` = fine in small amounts (UK sheet: minor wheat ingredients need not be avoided).
+// shortcut: keyword matching only catches ingredients listed here; unknown names count as safe. Upgrade by adding patterns.
+const TRIGGERS = [
+  { n: 'Onion', g: 'Fr', test: 'oni', re: 'onions?|cebollas?|shallots?|chalotas?|leeks?|puerros?' },
+  { n: 'Garlic', g: 'Fr', test: 'gar', re: 'garlic|ajos?' },
+  { n: 'Wheat', g: 'Fr', test: 'whe', minor: true, re: 'wheat|trigo|semolina|semola|couscous|cuscus|bulgur|kamut|durum' },
+  { n: 'Rye', g: 'Fr', minor: true, re: 'rye|centeno' },
+  { n: 'Barley', g: 'Fr', minor: true, re: 'barley|cebada' },
+  { n: 'Spelt', g: 'Fr', minor: true, re: 'spelt|espelta' },
+  { n: 'Inulin / FOS / chicory', g: 'Fr', re: 'inulin|inulina|fos|fructo-?oligosacaridos|fructooligosaccharides?|oligofructosa|oligofructose|chicory|achicoria' },
+  { n: 'Artichoke', g: 'Fr', re: 'artichokes?|alcachofas?' },
+  { n: 'Fructose / fructose syrup', g: 'F', re: 'fructose|fructosa|hfcs|agave' },
+  { n: 'Honey', g: 'F', test: 'fru', re: 'honey|miel' },
+  { n: 'Fruit juice concentrate', g: 'F', re: 'fruit juice concentrate|apple juice|pear juice|zumo de manzana|zumo de pera|zumo concentrado|concentrado de (?:zumo de )?(?:manzana|pera)' },
+  { n: 'Apple / pear', g: 'FS', test: 'fs', re: 'apples?|manzanas?|pears?|peras?' },
+  { n: 'Mango', g: 'F', re: 'mangos?|mangoes' },
+  { n: 'Dried fruit', g: 'F', re: 'raisins?|sultanas?|uvas pasas|pasas|datiles|figs|higos|prunes|ciruelas pasas' },
+  { n: 'Sorbitol', g: 'S', re: 'sorbitol|e420' },
+  { n: 'Mannitol', g: 'M', re: 'mannitol|manitol|e421' },
+  { n: 'Other polyols (xylitol, maltitol, isomalt, lactitol)', re: 'xylitol|xilitol|e967|maltitol|e965|isomalt|e953|lactitol|e966' },
+  { n: 'Milk / lactose', g: 'L', test: 'lac', re: 'lactose|lactosa|milk|leche|whey|suero(?: de leche)?|lactosuero|yogh?urt|yogur' },
+  { n: 'Legumes', g: 'GOS', test: 'gos', re: 'chickpeas?|garbanzos?|lentils?|lentejas?|beans|judias|alubias|frijoles|peas|guisantes?|pea protein|soybeans?|harina de soja|soy flour' },
+  { n: 'Cashew / pistachio', g: 'GOS', re: 'cashews?|anacardos?|pistachios?|pistachos?' },
+  { n: 'Mushroom', g: 'M', test: 'man', re: 'mushrooms?|champinon(?:es)?|setas?' },
+  { n: 'Cauliflower', g: 'M', re: 'cauliflower|coliflor' },
+].map(t => ({ ...t, rx: new RegExp(`(?:^|[^a-z0-9])(?:${t.re})(?![a-z0-9])`) }));
+// Phrases that contain a trigger word but are fine.
+const SAFE = /sin lactosa|lactose[ -]?free|libre de lactosa|leche de (?:coco|almendras?|arroz)|(?:coconut|almond|rice) milk|lecitina de soja|soy(?:a|bean)? lecithin|salsa de soja|soy sauce|proteina de soja|soy protein|aceite de soja|soybean oil|judias verdes|green beans|(?:vanilla|cocoa|coffee) beans|ajonjoli/g;
+const normText = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\be[\s-]?(\d{3})\b/g, 'e$1').replace(/\s+/g, ' ');
+
+function checkIngredients(text) {
+  const s = normText(text).replace(/(?:puede contener|may contain|contiene trazas|trazas de|traces of)[^.]*/g, ' ').replace(SAFE, ' ');
+  const parts = s.split(/[,;]/); // ingredients are listed by weight, so position tells the amount
+  return TRIGGERS.flatMap(t => {
+    const pos = parts.findIndex(p => t.rx.test(p));
+    if (pos < 0) return [];
+    let level = t.minor && pos >= 3 ? 'caution' : 'avoid', why = level === 'caution' ? 'Small amount, usually fine' : '';
+    const own = t.test && S.tests[t.test]?.end && outcome(S.tests[t.test].scores).result;
+    const grp = t.g && groupStatus(t.g);
+    if (own === 'pass' || (!own && grp === 'ok')) [level, why] = ['ok', 'You tolerated this in your tests'];
+    else if (own === 'partial' || (!own && grp === 'limit')) [level, why] = ['caution', 'You tolerate small amounts'];
+    return [{ n: t.n, g: t.g, pos, level, why }];
+  });
+}
+
+let scan = { text: '', status: '', checked: false }, ocrWorker;
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+async function scanPhoto(file) {
+  if (!file) return;
+  const setStatus = m => { scan.status = m; const el = document.getElementById('scan-status'); if (el) el.textContent = m; };
+  try {
+    setStatus('Loading text reader…');
+    if (!window.Tesseract) await new Promise((ok, fail) => {
+      const el = document.createElement('script');
+      el.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      el.onload = ok; el.onerror = () => fail(new Error('Could not load the text reader. Check your internet connection.'));
+      document.head.append(el);
+    });
+    // Downscale big phone photos: faster OCR, same accuracy for label text.
+    const img = await createImageBitmap(file), k = Math.min(1, 2000 / Math.max(img.width, img.height));
+    const cv = document.createElement('canvas'); cv.width = img.width * k; cv.height = img.height * k;
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    ocrWorker ??= await Tesseract.createWorker(['spa', 'eng'], 1, {
+      logger: m => m.status === 'recognizing text' && setStatus(`Reading text… ${Math.round(m.progress * 100)}%`),
+    });
+    const { data } = await ocrWorker.recognize(cv);
+    scan = { text: data.text.trim(), status: data.text.trim() ? '' : 'No text found. Try a closer, sharper photo.', checked: true };
+  } catch (e) {
+    scan.status = e.message || 'Could not read the photo.';
+  }
+  if (view === 'scan') render();
+}
+
+function scanView() {
+  const found = scan.checked && scan.text.trim() ? checkIngredients(scan.text) : null;
+  let result = '';
+  if (found) {
+    const worst = found.some(f => f.level === 'avoid') ? 'avoid' : found.some(f => f.level === 'caution') ? 'limit' : 'ok';
+    const title = { avoid: 'Not suitable', limit: 'Check the amount', ok: found.length ? 'Fine for you' : 'No FODMAP ingredients found' }[worst];
+    result = `<div class="verdict ${worst}">${title}</div>
+      ${found.length ? `<div class="list">${found.map(f => `<div class="row"><div class="row-main">${f.n}<div class="row-sub">${[f.g && GROUPS[f.g], f.why].filter(Boolean).join(' · ')}</div></div>
+        <span class="pill ${{ avoid: 'avoid', caution: 'limit', ok: 'ok' }[f.level]}">${{ avoid: 'Avoid', caution: 'Caution', ok: 'OK' }[f.level]}</span></div>`).join('')}</div>` : ''}
+      <div class="small" style="margin:0 4px 12px">Only ingredients the app knows are checked, and photo reading can miss words. Check the text above if something looks off.</div>`;
+  }
+  return `<div class="card"><p style="margin:0">Take a clear, close photo of the <b>ingredients list</b>. Works with Spanish and English labels.</p>
+      <label class="act" for="cam">Take photo</label><input id="cam" type="file" accept="image/*" capture="environment" hidden onchange="scanPhoto(this.files[0]);this.value=''">
+      <label class="link" for="pick" style="display:block;text-align:center">Choose from library</label><input id="pick" type="file" accept="image/*" hidden onchange="scanPhoto(this.files[0]);this.value=''">
+      <div id="scan-status" class="small" role="status" style="text-align:center">${esc(scan.status)}</div></div>
+    <h2>Ingredients text</h2><div class="card"><textarea id="ing" rows="5" oninput="scan.text=this.value" placeholder="Or type / paste the ingredients here" aria-label="Ingredients text">${esc(scan.text)}</textarea>
+      <button class="act" onclick="scan.checked=true;render()">Check ingredients</button></div>${result}`;
+}
+{ // self-checks for the matcher
+  const names = t => checkIngredients(t).map(f => f.n).join('|');
+  console.assert(names('Harina de TRIGO, azúcar, cebolla en polvo') === 'Onion|Wheat', 'es basic');
+  console.assert(names('Leche de coco, azúcar. Puede contener trazas de leche.') === '', 'safe phrase + traces');
+  console.assert(names('Arroz, sal, bajo en grasa, fosfato') === '', 'no false garlic/FOS');
+  console.assert(checkIngredients('rice, sugar, salt, wheat flour')[0].pos === 3, 'wheat position');
+  console.assert(names('Sweetener: E-420, sugar-free gum base') === 'Sorbitol', 'E-number');
+  console.assert(names('Agua, jarabe de glucosa-fructosa, zumo concentrado de manzana') === 'Fructose / fructose syrup|Fruit juice concentrate|Apple / pear', 'syrups');
+}
+
 function render(keepFocus) {
   const app = document.getElementById('app');
   if (keepFocus && view === 'foods') { // re-render only the list so the search box keeps focus
@@ -350,9 +457,9 @@ function render(keepFocus) {
     document.getElementById('list').replaceWith(tmp.querySelector('#list'));
     return;
   }
-  app.innerHTML = view === 'foods' ? foodsView() : planView();
-  document.getElementById('title').textContent = view === 'foods' ? 'Foods' : 'My Plan';
-  for (const v of ['foods', 'plan']) document.getElementById('t-' + v).setAttribute('aria-selected', v === view);
+  app.innerHTML = { foods: foodsView, plan: planView, scan: scanView }[view]();
+  document.getElementById('title').textContent = { foods: 'Foods', plan: 'My Plan', scan: 'Scan Label' }[view];
+  for (const v of ['foods', 'scan', 'plan']) document.getElementById('t-' + v).setAttribute('aria-selected', v === view);
 }
 function tab(v) { view = v; render(); }
 function setPhase(p) { S.phase = p; save(); render(); }
