@@ -14,6 +14,7 @@ A small web app for following the low FODMAP diet, for people with SIBO or IBS. 
   1. **Eliminate:** day counter and progress for the 2–6 week low FODMAP phase.
   2. **Reintroduce:** 10 tests (lactose, fructose, sorbitol, mannitol, fructose + sorbitol, GOS, wheat bread, wheat pasta, onion, garlic). Each runs 3 days with increasing doses. You log symptoms once a day (with undo for today's entry), the test stops at moderate symptoms, and then there are 4 rest days.
   3. **Personalise:** your results. The Foods and Scan tabs then mark foods as tolerated, small portions or avoid, based on your own tests.
+- **English and Spanish:** switch with the EN / ES buttons at the top. The app starts in Spanish when your phone is set to Spanish, and remembers your choice. Food search works with Spanish or English names, with or without accents.
 - Light and dark mode, iPhone and Android home-screen install.
 
 ## Install on your phone
@@ -48,7 +49,7 @@ The whole app is one file, with no build step and no dependencies to install.
 
 | File | What it is |
 |------|------------|
-| `index.html` | The app: styles, food data, reintroduction logic, label scanner |
+| `index.html` | The app: styles, food data, Spanish translations (`ES`), reintroduction logic, label scanner |
 | `manifest.json` | Home-screen install settings |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
 
@@ -59,5 +60,7 @@ python -m http.server 8080
 ```
 
 Then open http://localhost:8080. The app runs self-checks on every load. If one fails, a red banner appears at the top of the app and the error is logged to the console.
+
+All text is written in English and translated through `tr()`; the Spanish text lives in the `ES` object. When you add a food or any other text, add its Spanish version too. A self-check fails (red banner) if a food, note, dose or scanner result has no Spanish text, and any other missing text is logged to the console.
 
 To publish, push to `main`. GitHub Pages deploys it in about a minute.

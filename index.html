@@ -28,7 +28,8 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-  header { padding: calc(env(safe-area-inset-top) + 20px) 20px 4px; max-width: 640px; margin: auto; }
+  header { padding: calc(env(safe-area-inset-top) + 10px) 20px 4px; max-width: 640px; margin: auto; }
+  .seg.lang { width: 92px; margin: 0 0 4px auto; }
   h1 { font-size: 34px; font-weight: 700; letter-spacing: .01em; margin: 0; }
   .disclaimer { font-size: 13px; color: var(--sub); margin-top: 2px; }
   main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 640px; margin: auto; }
@@ -104,20 +105,171 @@
 </style>
 </head>
 <body>
-<header><h1 id="title">Foods</h1><div class="disclaimer">Low FODMAP guide for SIBO / IBS · not a substitute for your doctor or dietitian</div></header>
+<header><div class="seg lang" role="group" id="lang"></div><h1 id="title">Foods</h1><div class="disclaimer" id="disc"></div></header>
 <main id="app"></main>
 <nav role="tablist">
   <button role="tab" id="t-foods" onclick="tab('foods')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19l8-8"/></svg>Foods</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19l8-8"/></svg><span id="l-foods">Foods</span></button>
   <button role="tab" id="t-scan" onclick="tab('scan')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>Scan</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg><span id="l-scan">Scan</span></button>
   <button role="tab" id="t-plan" onclick="tab('plan')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>My Plan</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg><span id="l-plan">My Plan</span></button>
 </nav>
 <script>
 // Self-checks run on every load; a failure shows a red banner (see render) and logs to the console.
 const FAILED = [];
 const check = (ok, msg = 'unnamed check') => ok || (FAILED.push(msg), console.error('Self-check failed:', msg));
+
+// ---- Language: English text is the key; Spanish translations below. ----
+let LANG = localStorage.getItem('fodmap-lang') || (navigator.language?.startsWith('es') ? 'es' : 'en');
+const ES = {
+  // UI
+  'Foods': 'Alimentos', 'Scan': 'Escanear', 'My Plan': 'Mi plan', 'Scan Label': 'Escanear etiqueta',
+  'Low FODMAP guide for SIBO / IBS · not a substitute for your doctor or dietitian': 'Guía baja en FODMAP para SIBO / SII · no sustituye a tu médico ni dietista',
+  'Language': 'Idioma',
+  'Self-check failed: {m}. Results may be wrong.': 'Falló una comprobación interna: {m}. Los resultados pueden ser incorrectos.',
+  'You: avoid': 'Tú: evitar', 'You: small portions': 'Tú: raciones pequeñas', 'You: tolerated': 'Tú: tolerado',
+  'Search foods': 'Buscar alimentos', 'All': 'Todos', 'Level': 'Nivel', 'All categories': 'Todas las categorías', 'Category': 'Categoría',
+  'Check labels for hidden FODMAPs': 'Revisa las etiquetas: FODMAP ocultos',
+  'Onion or garlic in any form: powder, salt, extract, purée. Common in stocks, sauces, crisps, ready meals.': 'Cebolla o ajo en cualquier forma: en polvo, sal, extracto, puré. Habitual en caldos, salsas, snacks y platos preparados.',
+  'Added fibre: inulin, FOS, oligofructose, chicory root.': 'Fibra añadida: inulina, FOS, oligofructosa, raíz de achicoria.',
+  'Fructose: glucose-fructose syrup, high-fructose corn syrup, agave, honey, fruit juice concentrate.': 'Fructosa: jarabe de glucosa-fructosa, jarabe de maíz alto en fructosa, agave, miel, zumo de fruta concentrado.',
+  'Polyols: sorbitol (E420), mannitol (E421), isomalt (E953), maltitol (E965), xylitol (E967). Found in sugar-free sweets, gum, protein powders.': 'Polioles: sorbitol (E420), manitol (E421), isomalt (E953), maltitol (E965), xilitol (E967). En golosinas y chicles sin azúcar y en proteínas en polvo.',
+  'Small amounts of wheat as a thickener or flavouring are fine.': 'Pequeñas cantidades de trigo como espesante o aroma no son problema.',
+  'No match. Check the Monash FODMAP app.': 'Sin resultados. Consulta la app de FODMAP de Monash.',
+  'Tolerated': 'Tolerado', 'Small amounts': 'Poca cantidad', 'Keep low': 'Evitar por ahora', 'Not tested': 'Sin probar',
+  "Undo today's entry": 'Deshacer el registro de hoy', 'Fine up to {d}': 'Bien hasta {d}', 'Redo test': 'Repetir prueba',
+  'Day {n} of 3': 'Día {n} de 3', 'Day {n}': 'Día {n}', 'up to {d}': 'hasta {d}',
+  "Today's symptoms saved: <b>{s}</b>. Come back tomorrow for day {n}: <b>{d}</b>.": 'Síntomas de hoy guardados: <b>{s}</b>. Vuelve mañana para el día {n}: <b>{d}</b>.',
+  'Today eat <b>{d}</b>. Keep the rest of your diet low FODMAP.': 'Hoy toma <b>{d}</b>. El resto de tu dieta sigue baja en FODMAP.',
+  'How are your symptoms today? (bloating, pain, gas, bowel changes)': '¿Cómo están hoy tus síntomas? (hinchazón, dolor, gases, cambios intestinales)',
+  'Cancel test': 'Cancelar prueba', 'Start test': 'Empezar prueba',
+  'Eliminate': 'Eliminar', 'Reintroduce': 'Reintroducir', 'Personalise': 'Personalizar', 'Phase': 'Fase',
+  'Low FODMAP diet': 'Dieta baja en FODMAP', 'Start': 'Inicio', '2 wk': '2 sem', '4 wk': '4 sem', '6 wk': '6 sem',
+  'Over 6 weeks. If symptoms have not improved, talk to your doctor before continuing.': 'Más de 6 semanas. Si los síntomas no han mejorado, habla con tu médico antes de seguir.',
+  'Past the 2-week minimum. If your symptoms are well controlled, you can move on to reintroduction.': 'Ya llevas el mínimo de 2 semanas. Si tus síntomas están controlados, puedes pasar a la reintroducción.',
+  '{n} more day until the 2-week minimum.': 'Falta {n} día para el mínimo de 2 semanas.',
+  '{n} more days until the 2-week minimum.': 'Faltan {n} días para el mínimo de 2 semanas.',
+  'Start reintroduction': 'Empezar la reintroducción', 'Started on': 'Empezaste el', 'How it works': 'Cómo funciona',
+  'Eat only {low} foods and keep {mod} foods to the listed portion. This phase usually lasts 2–6 weeks (4–6 weeks is often recommended). It is a short-term diagnostic step, not a forever diet.':
+    'Come solo alimentos de nivel {low} y limita los de nivel {mod} a la ración indicada. Esta fase suele durar 2–6 semanas (a menudo se recomiendan 4–6). Es un paso diagnóstico corto, no una dieta para siempre.',
+  'Rest days: next test from {d}': 'Días de descanso: próxima prueba desde el {d}',
+  'How reintroduction works': 'Cómo funciona la reintroducción',
+  'Test one FODMAP group at a time over 3 days with increasing doses, staying low FODMAP otherwise.': 'Prueba un grupo FODMAP cada vez durante 3 días con dosis crecientes; el resto de la dieta sigue baja en FODMAP.',
+  'Stop if symptoms are moderate or worse.': 'Para si los síntomas son moderados o peores.',
+  'Then rest {n} days on your low FODMAP diet (symptom-free) before the next test.': 'Después descansa {n} días con tu dieta baja en FODMAP (sin síntomas) antes de la siguiente prueba.',
+  'Even if a food is tolerated, keep avoiding it until phase 3 so it does not mask the next test.': 'Aunque toleres un alimento, sigue evitándolo hasta la fase 3 para que no enmascare la siguiente prueba.',
+  'Your results': 'Tus resultados', 'What to do now': 'Qué hacer ahora',
+  'Bring back the foods you tolerated. For groups that gave symptoms, test other foods from that group with the same 3-day scheme: you may tolerate some of them, or smaller amounts.':
+    'Vuelve a incluir los alimentos que toleraste. En los grupos que te dieron síntomas, prueba otros alimentos del grupo con el mismo esquema de 3 días: puede que toleres algunos, o cantidades menores.',
+  'Avoid only the specific foods and amounts that cause symptoms, and retest them every few months. Tolerance often changes.':
+    'Evita solo los alimentos y cantidades concretos que te causan síntomas, y vuelve a probarlos cada pocos meses. La tolerancia suele cambiar.',
+  'The Foods tab shows a "You:" tag based on your results.': 'La pestaña Alimentos muestra una etiqueta "Tú:" según tus resultados.',
+  'Your data stays on this device.': 'Tus datos se quedan en este dispositivo.', 'Back up data': 'Copia de seguridad', 'Restore backup': 'Restaurar copia',
+  'This file is not a valid backup from this app.': 'Este archivo no es una copia de seguridad válida de esta app.',
+  'Replace your current data with this backup?': '¿Reemplazar tus datos actuales con esta copia?',
+  "Delete this test's results?": '¿Borrar los resultados de esta prueba?',
+  'Not suitable': 'No apto', 'Check the amount': 'Revisa la cantidad', 'Fine for you': 'Apto para ti', 'No FODMAP ingredients found': 'No se encontraron ingredientes FODMAP',
+  'Avoid': 'Evitar', 'Caution': 'Precaución', 'OK': 'OK',
+  'Only ingredients the app knows are checked, and photo reading can miss words. Check the text above if something looks off.':
+    'Solo se revisan los ingredientes que la app conoce, y la lectura de la foto puede fallar. Revisa el texto de arriba si algo no cuadra.',
+  'Take a clear, close photo of the <b>ingredients list</b>. Works with Spanish and English labels.': 'Haz una foto nítida y de cerca de la <b>lista de ingredientes</b>. Funciona con etiquetas en español e inglés.',
+  'Take photo': 'Hacer foto', 'Choose from library': 'Elegir de la galería', 'Ingredients text': 'Texto de ingredientes',
+  'Or type / paste the ingredients here': 'O escribe / pega aquí los ingredientes', 'Check ingredients': 'Revisar ingredientes',
+  'Loading text reader…': 'Cargando el lector de texto…', 'Could not load the text reader. Check your internet connection.': 'No se pudo cargar el lector de texto. Revisa tu conexión a internet.',
+  'Reading text… {n}%': 'Leyendo texto… {n}%', 'No text found. Try a closer, sharper photo.': 'No se encontró texto. Prueba con una foto más cercana y nítida.',
+  'Could not read the photo.': 'No se pudo leer la foto.',
+  'Small amount, usually fine': 'Poca cantidad, suele tolerarse', 'You tolerated this in your tests': 'Lo toleraste en tus pruebas', 'You tolerate small amounts': 'Toleras pequeñas cantidades',
+  // Groups, levels, symptoms
+  'Fructose': 'Fructosa', 'Lactose': 'Lactosa', 'Fructans': 'Fructanos', 'GOS': 'GOS', 'Sorbitol': 'Sorbitol', 'Mannitol': 'Manitol', 'Fructose + sorbitol': 'Fructosa + sorbitol',
+  'Low': 'Bajo', 'Moderate': 'Moderado', 'High': 'Alto', 'None': 'Ninguno', 'Mild': 'Leve', 'Severe': 'Grave',
+  // Categories
+  'Grains & starches': 'Cereales y féculas', 'Vegetables': 'Verduras y legumbres', 'Fruit': 'Fruta', 'Meat, fish, eggs & alternatives': 'Carne, pescado, huevos y alternativas',
+  'Dairy & alternatives': 'Lácteos y alternativas', 'Nuts & seeds': 'Frutos secos y semillas', 'Sweeteners, sauces & seasoning': 'Endulzantes, salsas y condimentos', 'Drinks': 'Bebidas',
+  // Foods and notes
+  'Rice': 'Arroz', 'Oats / porridge': 'Avena / gachas', 'Quinoa': 'Quinoa', 'Buckwheat': 'Trigo sarraceno', 'Millet': 'Mijo', 'Polenta / cornflour': 'Polenta / harina de maíz',
+  'Potato': 'Patata', 'Tapioca': 'Tapioca', 'Rice noodles': 'Fideos de arroz', 'Gluten-free pasta': 'Pasta sin gluten', 'Not made from lentils or chickpeas': 'Que no sea de lentejas ni garbanzos',
+  'Gluten-free bread': 'Pan sin gluten', '100% spelt sourdough': 'Pan de masa madre 100% espelta',
+  'Only real 100% spelt sourdough; other spelt bread is high': 'Solo masa madre 100% espelta de verdad; el resto de pan de espelta es alto',
+  'Corn tortillas / taco shells': 'Tortillas de maíz / tacos', 'Rice cakes / oatcakes / corn cakes': 'Tortitas de arroz, avena o maíz', 'Cornflakes / rice cereal': 'Copos de maíz / cereales de arroz',
+  'Popcorn / plain crisps': 'Palomitas / patatas fritas naturales', 'Wheat bread': 'Pan de trigo',
+  'White, wholemeal, multigrain, pitta, bagels, naan. Normal sourdough: small amounts may be ok': 'Blanco, integral, multicereal, pita, bagels, naan. Masa madre normal: en poca cantidad puede tolerarse',
+  'Wheat pasta': 'Pasta de trigo', 'Includes fresh pasta and gnocchi': 'Incluye pasta fresca y ñoquis', 'Couscous / semolina / bulgur': 'Cuscús / sémola / bulgur',
+  'Rye bread / crispbread': 'Pan o biscotes de centeno', 'Barley': 'Cebada', 'Egg / udon / ramen noodles': 'Fideos de huevo, udon o ramen',
+  'Wheat cakes, biscuits, pastries': 'Bollería, galletas y pasteles de trigo', 'Croissants, muffins, pies, pizza bases': 'Cruasanes, magdalenas, empanadas, masas de pizza',
+  'Breaded or battered foods': 'Empanados y rebozados', 'Bran cereals / muesli': 'Cereales de salvado / muesli', 'Muesli often has dried fruit too': 'El muesli suele llevar también fruta desecada',
+  'Chickpea / lentil pasta': 'Pasta de garbanzo o lenteja',
+  'Carrot': 'Zanahoria', 'Cucumber': 'Pepino', 'Lettuce / rocket / endive': 'Lechuga / rúcula / endivia', 'Spinach / chard': 'Espinacas / acelgas', 'Tomato': 'Tomate',
+  'Zucchini': 'Calabacín', 'Bell pepper': 'Pimiento', 'Eggplant': 'Berenjena', 'Green beans': 'Judías verdes', 'Bok choy': 'Pak choi', 'Bean sprouts / bamboo shoots': 'Brotes de soja / bambú',
+  'Radish': 'Rábano', 'Parsnip / swede / turnip': 'Chirivía / colinabo / nabo', 'White or red cabbage': 'Col blanca o lombarda', 'Olives': 'Aceitunas', 'Seaweed / nori': 'Algas / nori',
+  'Spring onion (green part)': 'Cebolleta (parte verde)', 'Good onion substitute': 'Buen sustituto de la cebolla', 'Leek (green part)': 'Puerro (parte verde)', 'Chives': 'Cebollino',
+  'Avocado': 'Aguacate', 'Max ¼ avocado a day': 'Máximo ¼ de aguacate al día', 'Sweet potato': 'Boniato', 'Small portion (under ½ cup)': 'Ración pequeña (menos de ½ taza)',
+  'Broccoli': 'Brócoli', 'Small portion; heads better than stalks': 'Ración pequeña; mejor las flores que los tallos', 'Celery': 'Apio', 'Max ~5 cm stick': 'Máximo un trozo de ~5 cm',
+  'Butternut squash / pumpkin': 'Calabaza', 'Small portion (¼ cup)': 'Ración pequeña (¼ taza)', 'Brussels sprouts': 'Coles de Bruselas', 'Small portion': 'Ración pequeña',
+  'Savoy cabbage': 'Col de Milán', 'Beetroot': 'Remolacha', 'Sweetcorn': 'Maíz dulce', 'Fennel': 'Hinojo', 'Okra': 'Okra', 'Canned artichoke hearts': 'Corazones de alcachofa en conserva',
+  'Mangetout / snow peas': 'Tirabeques', 'Canned lentils': 'Lentejas en conserva', 'Small portion (¼ cup), rinsed': 'Ración pequeña (¼ taza), enjuagadas', 'Canned chickpeas': 'Garbanzos en conserva',
+  'Small portion (¼ cup), rinsed. Tinned is better tolerated than home-cooked': 'Ración pequeña (¼ taza), enjuagados. En conserva se toleran mejor que cocidos en casa',
+  'Garlic': 'Ajo', 'Onion': 'Cebolla', 'Red, white, Spanish, shallots': 'Roja, blanca, chalotas', 'Leek (white part)': 'Puerro (parte blanca)', 'Spring onion (white part)': 'Cebolleta (parte blanca)',
+  'Artichoke / Jerusalem artichoke': 'Alcachofa / tupinambo', 'Asparagus': 'Espárragos', 'Cauliflower': 'Coliflor', 'Mushrooms': 'Champiñones', 'Peas': 'Guisantes',
+  'Beans (kidney, butter, broad, soy, black-eyed)': 'Alubias, habas, soja, judías carillas', 'Baked beans': 'Alubias en salsa (baked beans)', 'Home-cooked lentils / chickpeas': 'Lentejas / garbanzos cocidos en casa',
+  'Split peas': 'Guisantes secos partidos', 'Hummus': 'Hummus',
+  'Banana (firm)': 'Plátano (poco maduro)', 'Blueberries': 'Arándanos', 'Strawberries': 'Fresas', 'Raspberries': 'Frambuesas', 'Kiwi': 'Kiwi', 'Orange': 'Naranja',
+  'Mandarin / clementine': 'Mandarina / clementina', 'Lemon / lime': 'Limón / lima', 'Pineapple (fresh)': 'Piña (fresca)', 'Grapes': 'Uvas', 'A small handful at a time': 'Un puñado pequeño cada vez',
+  'Cantaloupe / honeydew melon': 'Melón', 'Passion fruit': 'Fruta de la pasión', 'Papaya': 'Papaya', 'Rhubarb': 'Ruibarbo', 'Cranberries': 'Arándanos rojos', 'Ripe banana': 'Plátano maduro',
+  'Grapefruit': 'Pomelo', 'Max ½ small': 'Máximo ½ pequeño', 'Lychee': 'Lichi', 'Max 5': 'Máximo 5', 'Pomegranate': 'Granada', 'Coconut (dried)': 'Coco (seco)', 'Max 3 tbsp': 'Máximo 3 cucharadas',
+  'Apple': 'Manzana', 'Pear': 'Pera', 'Mango': 'Mango', 'Watermelon': 'Sandía', 'Cherries': 'Cerezas', 'Peach / nectarine': 'Melocotón / nectarina', 'Apricot': 'Albaricoque',
+  'Plum / prune': 'Ciruela / ciruela pasa', 'Blackberries': 'Moras', 'Figs': 'Higos', 'Dates': 'Dátiles', 'Persimmon (kaki)': 'Caqui',
+  'Dried fruit (raisins, sultanas, dried apricots)': 'Fruta desecada (pasas, orejones)', 'Tinned fruit in juice': 'Fruta en almíbar o en zumo', 'Fruit juice (apple, tropical)': 'Zumo de fruta (manzana, tropical)',
+  'Juice of suitable fruit: max 100 ml': 'Zumo de fruta permitida: máximo 100 ml',
+  'Beef / pork / lamb': 'Ternera / cerdo / cordero', 'Chicken / turkey / duck / rabbit': 'Pollo / pavo / pato / conejo', 'Fish (white or oily)': 'Pescado (blanco o azul)', 'Shellfish': 'Marisco',
+  'Tinned fish in oil or brine': 'Pescado en conserva en aceite o al natural', 'Eggs': 'Huevos', 'Firm tofu': 'Tofu firme', 'Tempeh': 'Tempeh', 'Quorn': 'Quorn',
+  'Check for onion/garlic': 'Revisa si lleva cebolla o ajo', 'Soya mince (TVP)': 'Soja texturizada', 'Sausages / processed meats': 'Salchichas / embutidos',
+  'Often contain onion, garlic or wheat; check label': 'Suelen llevar cebolla, ajo o trigo; revisa la etiqueta', 'Silken tofu': 'Tofu sedoso',
+  'Lactose-free milk': 'Leche sin lactosa', 'Lactose-free yogurt': 'Yogur sin lactosa', 'Hard / aged cheese': 'Queso curado', 'Cheddar, parmesan, cured manchego': 'Cheddar, parmesano, manchego curado',
+  'Brie / camembert / feta / mozzarella': 'Brie / camembert / feta / mozzarella', 'Butter': 'Mantequilla', 'Cream / crème fraîche': 'Nata / crème fraîche',
+  'Almond milk': 'Bebida de almendra', 'Rice milk': 'Bebida de arroz', 'Max 200 ml': 'Máximo 200 ml', 'Soy milk (from soy protein)': 'Bebida de soja (de proteína de soja)',
+  'Coconut yogurt': 'Yogur de coco', 'Dark chocolate': 'Chocolate negro', '75%+ cocoa': '75% de cacao o más', 'Oat milk': 'Bebida de avena', 'Max 50 ml': 'Máximo 50 ml',
+  'Milk chocolate / white chocolate': 'Chocolate con leche / blanco', 'Max 30 g': 'Máximo 30 g', "Cow's milk": 'Leche de vaca',
+  'Also goat and sheep. Max 50 ml (¼ cup) in a drink is usually ok': 'También de cabra y oveja. Unos 50 ml (¼ taza) en una bebida suelen tolerarse',
+  'Regular yogurt': 'Yogur normal', 'Max 2 tbsp': 'Máximo 2 cucharadas', 'Soft fresh cheese': 'Queso fresco blando',
+  'Ricotta, cottage, quark, mascarpone: max 2 tbsp': 'Ricotta, requesón, quark, mascarpone: máximo 2 cucharadas', 'Ice cream': 'Helado', 'Max 1 scoop': 'Máximo 1 bola',
+  'Custard / dairy desserts': 'Natillas / postres lácteos', 'Kefir': 'Kéfir', 'Condensed / evaporated / powdered milk': 'Leche condensada, evaporada o en polvo',
+  'Soy milk (whole bean)': 'Bebida de soja (de habas enteras)',
+  'Peanuts / peanut butter': 'Cacahuetes / crema de cacahuete', 'A small handful': 'Un puñado pequeño', 'Walnuts': 'Nueces', 'Macadamias': 'Macadamias', 'Pecans': 'Pacanas',
+  'Pine nuts': 'Piñones', 'Pumpkin / sunflower / sesame / flax seeds': 'Semillas de calabaza, girasol, sésamo o lino', 'Almonds': 'Almendras', 'Max 10': 'Máximo 10',
+  'Hazelnuts': 'Avellanas', 'Cashews': 'Anacardos', 'Pistachios': 'Pistachos',
+  'Sugar (white / brown)': 'Azúcar (blanco / moreno)', 'Maple syrup': 'Sirope de arce', 'Golden syrup': 'Jarabe dorado (golden syrup)', 'Jam from suitable fruit': 'Mermelada de fruta permitida',
+  'Check sugar-free jams for polyols': 'Revisa los polioles en las mermeladas sin azúcar', 'Stevia / aspartame / sucralose': 'Estevia / aspartamo / sucralosa',
+  'Garlic-infused oil': 'Aceite infusionado con ajo', 'Strained; fructans do not pass into oil': 'Colado; los fructanos no pasan al aceite', 'Asafoetida (hing)': 'Asafétida (hing)',
+  'Gives onion flavour': 'Da sabor a cebolla', 'Herbs & spices': 'Hierbas y especias', 'Mustard': 'Mostaza', 'Vinegar (white / rice)': 'Vinagre (blanco / de arroz)',
+  'Balsamic vinegar': 'Vinagre balsámico', 'Max 1 tbsp': 'Máximo 1 cucharada', 'Honey': 'Miel', 'Agave syrup': 'Sirope de agave', 'Glucose-fructose syrup / HFCS': 'Jarabe de glucosa-fructosa / JMAF',
+  'Sugar-free gum / mints / sweets': 'Chicles, caramelos y golosinas sin azúcar', 'Sorbitol, mannitol, xylitol, isomalt, maltitol': 'Sorbitol, manitol, xilitol, isomalt, maltitol',
+  'Onion / garlic powder or salt': 'Cebolla o ajo en polvo, sal de ajo', 'Stock cubes / gravy / ready sauces': 'Pastillas de caldo / salsas preparadas', 'Usually contain onion or garlic': 'Suelen llevar cebolla o ajo',
+  'Added fibre / prebiotics': 'Fibra añadida / prebióticos', 'Inulin, FOS, oligofructose, chicory root': 'Inulina, FOS, oligofructosa, raíz de achicoria',
+  'Water': 'Agua', 'Tea / coffee': 'Té / café', 'Most alcohol': 'La mayoría de bebidas alcohólicas', 'Low FODMAP, but alcohol itself can worsen symptoms': 'Bajas en FODMAP, pero el alcohol en sí puede empeorar los síntomas',
+  'Chamomile / fennel / chicory / dandelion / chai tea': 'Manzanilla, hinojo, achicoria, diente de león o chai', 'Rum / dessert wine': 'Ron / vino dulce',
+  // Reintroduction doses
+  '½ glass': '½ vaso', '1 glass': '1 vaso', '1½ glasses': '1½ vasos', 'or yogurt: 1 → 1½ → 2': 'o yogur: 1 → 1½ → 2', '1 tbsp': '1 cucharada', '1½ tbsp': '1½ cucharadas', '2 tbsp': '2 cucharadas',
+  'or mango: ½ → ¾ → 1': 'o mango: ½ → ¾ → 1', '½ avocado': '½ aguacate', '¾ avocado': '¾ aguacate', '1 avocado': '1 aguacate', 'or blackberries: 5 → 8 → 10': 'o moras: 5 → 8 → 10',
+  '½ cup': '½ taza', '¾ cup': '¾ taza', '1 cup': '1 taza', 'or cauliflower: same amounts': 'o coliflor: mismas cantidades', '½ apple': '½ manzana', '¾ apple': '¾ manzana', '1 apple': '1 manzana',
+  'or pear: same amounts': 'o pera: mismas cantidades', '1 deep plate': '1 plato hondo',
+  'or canned chickpeas: same amounts. If sensitive, test on alternate days': 'o garbanzos en conserva: mismas cantidades. Si eres sensible, prueba en días alternos',
+  '1 slice wholemeal': '1 rebanada integral', '2 slices': '2 rebanadas', '3 slices': '3 rebanadas', 'If sensitive, test on alternate days': 'Si eres sensible, prueba en días alternos',
+  '1 cup wholemeal': '1 taza integral', '1½ cups': '1½ tazas', '1 full plate': '1 plato llano', '¼ onion': '¼ cebolla', '⅓ onion': '⅓ cebolla', '½ onion': '½ cebolla',
+  '½ clove': '½ diente', '¾ clove': '¾ diente', '1 clove': '1 diente',
+  // Scanner results
+  'Wheat': 'Trigo', 'Rye': 'Centeno', 'Spelt': 'Espelta', 'Inulin / FOS / chicory': 'Inulina / FOS / achicoria', 'Artichoke': 'Alcachofa', 'Fructose / fructose syrup': 'Fructosa / jarabe de fructosa',
+  'Fruit juice concentrate': 'Zumo de fruta concentrado', 'Apple / pear': 'Manzana / pera', 'Dried fruit': 'Fruta desecada',
+  'Other polyols (xylitol, maltitol, isomalt, lactitol)': 'Otros polioles (xilitol, maltitol, isomalt, lactitol)', 'Milk / lactose': 'Leche / lactosa', 'Legumes': 'Legumbres',
+  'Cashew / pistachio': 'Anacardo / pistacho', 'Mushroom': 'Champiñón / setas',
+};
+// Translate; {name} placeholders are filled from `v`. A missing Spanish text falls back to English and is logged.
+function tr(s, v) {
+  let o = LANG === 'es' ? ES[s] : s;
+  if (o === undefined) { console.warn('Missing Spanish text:', s); o = s; }
+  return v ? o.replace(/\{(\w+)\}/g, (_, k) => v[k]) : o;
+}
+function setLang(l) { LANG = l; localStorage.setItem('fodmap-lang', l); render(); }
 
 // Levels at a typical serving: 0 low, 1 moderate (portion-limited), 2 high.
 // Sources: UK hospital "IBS and the Low FODMAP diet" sheet and SEEN / Hospital La Paz "Dieta baja en FODMAPs"; where they disagree the stricter rating is used.
@@ -266,8 +418,8 @@ function exportData() {
 async function importData(file) {
   if (!file) return;
   let x; try { x = JSON.parse(await file.text()) } catch { }
-  if (!validState(x)) return alert('This file is not a valid backup from this app.');
-  if (confirm('Replace your current data with this backup?')) { S = x; save(); render(); }
+  if (!validState(x)) return alert(tr('This file is not a valid backup from this app.'));
+  if (confirm(tr('Replace your current data with this backup?'))) { S = x; save(); render(); }
 }
 let view = 'foods';
 
@@ -284,107 +436,108 @@ function personalTag(f) {
   if (!f.level || !f.groups.length) return '';
   const own = CHALLENGES.find(c => c.food === f.name && S.tests[c.id]?.end); // the test food itself: its own result wins
   const st = own ? [{ pass: 'ok', partial: 'limit', fail: 'avoid' }[outcome(S.tests[own.id].scores).result]] : f.groups.map(groupStatus);
-  if (st.includes('avoid')) return '<span class="pill you">You: avoid</span>';
+  if (st.includes('avoid')) return `<span class="pill you">${tr('You: avoid')}</span>`;
   if (st.includes(undefined)) return '';
-  return st.includes('limit') ? '<span class="pill you">You: small portions</span>' : '<span class="pill you">You: tolerated</span>';
+  return `<span class="pill you">${tr(st.includes('limit') ? 'You: small portions' : 'You: tolerated')}</span>`;
 }
 
 let lvSel = ''; // level filter for the segmented control
 
 function foodRow(f) {
-  const sub = [f.groups.map(g => GROUPS[g]).join(', '), f.note].filter(Boolean).join(' · ');
-  return `<div class="row"><div class="row-main"><div>${f.name}</div>${sub ? `<div class="row-sub">${sub}</div>` : ''}${personalTag(f)}</div>
-    <span class="pill l${f.level}">${LEVEL[f.level]}</span></div>`;
+  const sub = [f.groups.map(g => tr(GROUPS[g])).join(', '), f.note && tr(f.note)].filter(Boolean).join(' · ');
+  return `<div class="row"><div class="row-main"><div>${tr(f.name)}</div>${sub ? `<div class="row-sub">${sub}</div>` : ''}${personalTag(f)}</div>
+    <span class="pill l${f.level}">${tr(LEVEL[f.level])}</span></div>`;
 }
 
 function foodsView() {
-  const q = (document.getElementById('q')?.value || '').toLowerCase(), ct = document.getElementById('ct')?.value ?? '';
-  const list = FOODS.filter(f => f.name.toLowerCase().includes(q) && (lvSel === '' || String(f.level) === lvSel) && (ct === '' || f.cat === ct));
+  const q = document.getElementById('q')?.value || '', ct = document.getElementById('ct')?.value ?? '', nq = normText(q).trim();
+  // Search matches both the Spanish and English names, with or without accents.
+  const list = FOODS.filter(f => (normText(tr(f.name)).includes(nq) || normText(f.name).includes(nq)) && (lvSel === '' || String(f.level) === lvSel) && (ct === '' || f.cat === ct));
   const cats = [...new Set(list.map(f => f.cat))];
   return `<div class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5" stroke-linecap="round"/></svg>
-      <input id="q" type="search" value="${esc(q)}" oninput="render(true)" placeholder="Search foods" aria-label="Search foods"></div>
-    <div class="seg" role="group" aria-label="Level">${[['', 'All'], ...LEVEL.map((l, i) => [String(i), l])].map(([v, l]) =>
-      `<button aria-pressed="${lvSel === v}" onclick="lvSel='${v}';render()">${l}</button>`).join('')}</div>
-    <select id="ct" onchange="render(true)" aria-label="Category"><option value="">All categories</option>${Object.keys(CATEGORIES).map(c => `<option ${ct === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
-    <details class="card"><summary>Check labels for hidden FODMAPs</summary><ul class="small">
-      <li>Onion or garlic in any form: powder, salt, extract, purée. Common in stocks, sauces, crisps, ready meals.</li>
-      <li>Added fibre: inulin, FOS, oligofructose, chicory root.</li>
-      <li>Fructose: glucose-fructose syrup, high-fructose corn syrup, agave, honey, fruit juice concentrate.</li>
-      <li>Polyols: sorbitol (E420), mannitol (E421), isomalt (E953), maltitol (E965), xylitol (E967). Found in sugar-free sweets, gum, protein powders.</li>
-      <li>Small amounts of wheat as a thickener or flavouring are fine.</li></ul></details>
-    <div id="list">${cats.map(c => `<h2>${c}</h2><div class="list">${list.filter(f => f.cat === c).map(foodRow).join('')}</div>`).join('')
-      || '<div class="card small">No match. Check the Monash FODMAP app.</div>'}</div>`;
+      <input id="q" type="search" value="${esc(q)}" oninput="render(true)" placeholder="${tr('Search foods')}" aria-label="${tr('Search foods')}"></div>
+    <div class="seg" role="group" aria-label="${tr('Level')}">${[['', 'All'], ...LEVEL.map((l, i) => [String(i), l])].map(([v, l]) =>
+      `<button aria-pressed="${lvSel === v}" onclick="lvSel='${v}';render()">${tr(l)}</button>`).join('')}</div>
+    <select id="ct" onchange="render(true)" aria-label="${tr('Category')}"><option value="">${tr('All categories')}</option>${Object.keys(CATEGORIES).map(c => `<option value="${c}" ${ct === c ? 'selected' : ''}>${tr(c)}</option>`).join('')}</select>
+    <details class="card"><summary>${tr('Check labels for hidden FODMAPs')}</summary><ul class="small">${[
+      'Onion or garlic in any form: powder, salt, extract, purée. Common in stocks, sauces, crisps, ready meals.',
+      'Added fibre: inulin, FOS, oligofructose, chicory root.',
+      'Fructose: glucose-fructose syrup, high-fructose corn syrup, agave, honey, fruit juice concentrate.',
+      'Polyols: sorbitol (E420), mannitol (E421), isomalt (E953), maltitol (E965), xylitol (E967). Found in sugar-free sweets, gum, protein powders.',
+      'Small amounts of wheat as a thickener or flavouring are fine.'].map(s => `<li>${tr(s)}</li>`).join('')}</ul></details>
+    <div id="list">${cats.map(c => `<h2>${tr(c)}</h2><div class="list">${list.filter(f => f.cat === c).map(foodRow).join('')}</div>`).join('')
+      || `<div class="card small">${tr('No match. Check the Monash FODMAP app.')}</div>`}</div>`;
 }
 
 const RESULT = { pass: ['ok', 'Tolerated'], partial: ['limit', 'Small amounts'], fail: ['avoid', 'Keep low'] };
 const badge = c => `<div class="badge" aria-hidden="true">${{ L: 'L', F: 'F', S: 'S', M: 'M', FS: 'F+S', GOS: 'GOS', Fr: 'FOS' }[c.g]}</div>`;
 
 function challengeCard(c, active, washoutUntil) {
-  const t = S.tests[c.id];
-  const head = pill => `<div class="row" style="padding:0"> ${badge(c)}<div class="row-main"><b>${c.food}</b><div class="row-sub">${GROUPS[c.g]}</div></div>${pill || ''}</div>`;
+  const t = S.tests[c.id], doses = c.doses.map(d => tr(d));
+  const head = pill => `<div class="row" style="padding:0"> ${badge(c)}<div class="row-main"><b>${tr(c.food)}</b><div class="row-sub">${tr(GROUPS[c.g])}</div></div>${pill || ''}</div>`;
   const loggedToday = t?.days?.at(-1) === today();
-  const undo = loggedToday ? `<button class="link" onclick="undoScore('${c.id}')">Undo today's entry</button> · ` : '';
+  const undo = loggedToday ? `<button class="link" onclick="undoScore('${c.id}')">${tr("Undo today's entry")}</button> · ` : '';
   if (t?.end) {
     const o = outcome(t.scores), [cls, label] = RESULT[o.result];
-    return `<div class="card">${head(`<span class="pill ${cls}">${label}</span>`)}
-      ${o.result === 'partial' ? `<div class="small" style="margin-top:8px">Fine up to ${c.doses[o.upTo]}</div>` : ''}
-      ${undo}<button class="link" onclick="resetTest('${c.id}')">Redo test</button></div>`;
+    return `<div class="card">${head(`<span class="pill ${cls}">${tr(label)}</span>`)}
+      ${o.result === 'partial' ? `<div class="small" style="margin-top:8px">${tr('Fine up to {d}', { d: doses[o.upTo] })}</div>` : ''}
+      ${undo}<button class="link" onclick="resetTest('${c.id}')">${tr('Redo test')}</button></div>`;
   }
   if (t) {
     const day = t.scores.length;
-    return `<div class="card">${head(`<span class="pill you" style="margin:0">Day ${loggedToday ? day : day + 1} of 3</span>`)}
-      <div class="steps">${c.doses.map((d, i) => `<span class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</span>`).join('')}</div>
+    return `<div class="card">${head(`<span class="pill you" style="margin:0">${tr('Day {n} of 3', { n: loggedToday ? day : day + 1 })}</span>`)}
+      <div class="steps">${doses.map((d, i) => `<span class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</span>`).join('')}</div>
       ${loggedToday
-        ? `<p style="margin-top:12px">Today's symptoms saved: <b>${SYMPTOMS[t.scores.at(-1)]}</b>. Come back tomorrow for day ${day + 1}: <b>${c.doses[day]}</b>.</p>`
-        : `<p style="margin-top:12px">Today eat <b>${c.doses[day]}</b>. Keep the rest of your diet low FODMAP.</p>
-      <div class="small">How are your symptoms today? (bloating, pain, gas, bowel changes)</div>
-      <div class="sym">${SYMPTOMS.map((s, i) => `<button class="s${i}" onclick="logScore('${c.id}',${i})">${s}</button>`).join('')}</div>`}
-      ${undo}<button class="link danger" onclick="resetTest('${c.id}')">Cancel test</button></div>`;
+        ? `<p style="margin-top:12px">${tr("Today's symptoms saved: <b>{s}</b>. Come back tomorrow for day {n}: <b>{d}</b>.", { s: tr(SYMPTOMS[t.scores.at(-1)]), n: day + 1, d: doses[day] })}</p>`
+        : `<p style="margin-top:12px">${tr('Today eat <b>{d}</b>. Keep the rest of your diet low FODMAP.', { d: doses[day] })}</p>
+      <div class="small">${tr('How are your symptoms today? (bloating, pain, gas, bowel changes)')}</div>
+      <div class="sym">${SYMPTOMS.map((s, i) => `<button class="s${i}" onclick="logScore('${c.id}',${i})">${tr(s)}</button>`).join('')}</div>`}
+      ${undo}<button class="link danger" onclick="resetTest('${c.id}')">${tr('Cancel test')}</button></div>`;
   }
   const blocked = active || washoutUntil > today();
-  return `<div class="card">${head()}<div class="steps">${c.doses.map(d => `<span>${d}</span>`).join('')}</div>
-    ${c.alt ? `<div class="small" style="margin-top:8px">${c.alt}</div>` : ''}
-    <button class="act" ${blocked ? 'disabled' : ''} onclick="startTest('${c.id}')">Start test</button></div>`;
+  return `<div class="card">${head()}<div class="steps">${doses.map(d => `<span>${d}</span>`).join('')}</div>
+    ${c.alt ? `<div class="small" style="margin-top:8px">${tr(c.alt)}</div>` : ''}
+    <button class="act" ${blocked ? 'disabled' : ''} onclick="startTest('${c.id}')">${tr('Start test')}</button></div>`;
 }
 
 function planView() {
   const phases = [['elim', 'Eliminate'], ['reintro', 'Reintroduce'], ['pers', 'Personalise']];
-  let html = `<div class="seg" role="group" aria-label="Phase">${phases.map(([k, l], i) => `<button aria-pressed="${S.phase === k}" onclick="setPhase('${k}')">${i + 1}. ${l}</button>`).join('')}</div>`;
+  let html = `<div class="seg" role="group" aria-label="${tr('Phase')}">${phases.map(([k, l], i) => `<button aria-pressed="${S.phase === k}" onclick="setPhase('${k}')">${i + 1}. ${tr(l)}</button>`).join('')}</div>`;
   if (S.phase === 'elim') {
-    const d = daysSince(S.elimStart), pct = Math.min(100, (d + 1) / 42 * 100);
-    html += `<div class="card"><div class="small">Low FODMAP diet</div><div class="big">Day ${d + 1}</div>
+    const d = daysSince(S.elimStart), pct = Math.min(100, (d + 1) / 42 * 100), left = 14 - d;
+    html += `<div class="card"><div class="small">${tr('Low FODMAP diet')}</div><div class="big">${tr('Day {n}', { n: d + 1 })}</div>
       <div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="42" aria-valuenow="${d + 1}"><div style="width:${pct}%"></div><i style="left:33.3%"></i><i style="left:66.6%"></i></div>
-      <div class="ticks"><span style="left:0;transform:none">Start</span><span style="left:33.3%">2 wk</span><span style="left:66.6%">4 wk</span><span style="right:0;transform:none">6 wk</span></div>
-      <p style="margin-top:14px">${d >= 42 ? 'Over 6 weeks. If symptoms have not improved, talk to your doctor before continuing.'
-        : d >= 14 ? 'Past the 2-week minimum. If your symptoms are well controlled, you can move on to reintroduction.'
-        : `${14 - d} more day${14 - d === 1 ? '' : 's'} until the 2-week minimum.`}</p>
-      <button class="act" onclick="setPhase('reintro')">Start reintroduction</button></div>
-      <div class="list"><div class="row"><label class="row-main" for="es">Started on</label><input id="es" type="date" value="${S.elimStart}" max="${today()}" onchange="if (this.value && this.value <= today()) { S.elimStart = this.value; save() } render()"></div></div>
-      <h2>How it works</h2><div class="card small">Eat only <span class="pill l0">Low</span> foods and keep <span class="pill l1">Moderate</span> foods to the listed portion.
-      This phase usually lasts 2–6 weeks (4–6 weeks is often recommended). It is a short-term diagnostic step, not a forever diet.</div>`;
+      <div class="ticks"><span style="left:0;transform:none">${tr('Start')}</span><span style="left:33.3%">${tr('2 wk')}</span><span style="left:66.6%">${tr('4 wk')}</span><span style="right:0;transform:none">${tr('6 wk')}</span></div>
+      <p style="margin-top:14px">${d >= 42 ? tr('Over 6 weeks. If symptoms have not improved, talk to your doctor before continuing.')
+        : d >= 14 ? tr('Past the 2-week minimum. If your symptoms are well controlled, you can move on to reintroduction.')
+        : tr(left === 1 ? '{n} more day until the 2-week minimum.' : '{n} more days until the 2-week minimum.', { n: left })}</p>
+      <button class="act" onclick="setPhase('reintro')">${tr('Start reintroduction')}</button></div>
+      <div class="list"><div class="row"><label class="row-main" for="es">${tr('Started on')}</label><input id="es" type="date" value="${S.elimStart}" max="${today()}" onchange="if (this.value && this.value <= today()) { S.elimStart = this.value; save() } render()"></div></div>
+      <h2>${tr('How it works')}</h2><div class="card small">${tr('Eat only {low} foods and keep {mod} foods to the listed portion. This phase usually lasts 2–6 weeks (4–6 weeks is often recommended). It is a short-term diagnostic step, not a forever diet.',
+        { low: `<span class="pill l0">${tr('Low')}</span>`, mod: `<span class="pill l1">${tr('Moderate')}</span>` })}</div>`;
   } else if (S.phase === 'reintro') {
     const active = CHALLENGES.some(c => S.tests[c.id] && !S.tests[c.id].end);
     const lastEnd = Object.values(S.tests).map(t => t.end).filter(Boolean).sort().pop();
     const washoutUntil = lastEnd ? addDays(lastEnd, WASHOUT_DAYS) : '';
-    if (washoutUntil > today() && !active) html += `<div class="banner">Rest days: next test from ${washoutUntil}</div>`;
-    html += `<details class="card"><summary>How reintroduction works</summary><ul class="small">
-      <li>Test one FODMAP group at a time over 3 days with increasing doses, staying low FODMAP otherwise.</li>
-      <li>Stop if symptoms are moderate or worse.</li>
-      <li>Then rest ${WASHOUT_DAYS} days on your low FODMAP diet (symptom-free) before the next test.</li>
-      <li>Even if a food is tolerated, keep avoiding it until phase 3 so it does not mask the next test.</li></ul></details>`;
+    if (washoutUntil > today() && !active) html += `<div class="banner">${tr('Rest days: next test from {d}', { d: washoutUntil })}</div>`;
+    html += `<details class="card"><summary>${tr('How reintroduction works')}</summary><ul class="small">
+      <li>${tr('Test one FODMAP group at a time over 3 days with increasing doses, staying low FODMAP otherwise.')}</li>
+      <li>${tr('Stop if symptoms are moderate or worse.')}</li>
+      <li>${tr('Then rest {n} days on your low FODMAP diet (symptom-free) before the next test.', { n: WASHOUT_DAYS })}</li>
+      <li>${tr('Even if a food is tolerated, keep avoiding it until phase 3 so it does not mask the next test.')}</li></ul></details>`;
     html += CHALLENGES.map(c => challengeCard(c, active, washoutUntil)).join('');
   } else {
-    html += `<h2>Your results</h2><div class="list">${CHALLENGES.map(c => {
+    html += `<h2>${tr('Your results')}</h2><div class="list">${CHALLENGES.map(c => {
         const t = S.tests[c.id], o = t?.end && outcome(t.scores);
         const [cls, label] = o ? RESULT[o.result] : ['none', 'Not tested'];
-        return `<div class="row">${badge(c)}<div class="row-main">${c.food}<div class="row-sub">${GROUPS[c.g]}${o?.result === 'partial' ? ` · up to ${c.doses[o.upTo]}` : ''}</div></div><span class="pill ${cls}">${label}</span></div>`;
+        return `<div class="row">${badge(c)}<div class="row-main">${tr(c.food)}<div class="row-sub">${tr(GROUPS[c.g])}${o?.result === 'partial' ? ` · ${tr('up to {d}', { d: tr(c.doses[o.upTo]) })}` : ''}</div></div><span class="pill ${cls}">${tr(label)}</span></div>`;
       }).join('')}</div>
-      <h2>What to do now</h2><div class="card small"><p>Bring back the foods you tolerated. For groups that gave symptoms, test other foods from that group with the same 3-day scheme: you may tolerate some of them, or smaller amounts.</p>
-      <p>Avoid only the specific foods and amounts that cause symptoms, and retest them every few months. Tolerance often changes.</p>
-      <p style="margin:0">The Foods tab shows a "You:" tag based on your results.</p></div>`;
+      <h2>${tr('What to do now')}</h2><div class="card small"><p>${tr('Bring back the foods you tolerated. For groups that gave symptoms, test other foods from that group with the same 3-day scheme: you may tolerate some of them, or smaller amounts.')}</p>
+      <p>${tr('Avoid only the specific foods and amounts that cause symptoms, and retest them every few months. Tolerance often changes.')}</p>
+      <p style="margin:0">${tr('The Foods tab shows a "You:" tag based on your results.')}</p></div>`;
   }
-  return html + `<div class="footer">Your data stays on this device.<br>
-    <button class="link" onclick="exportData()">Back up data</button> · <label class="link" for="restore">Restore backup</label>
+  return html + `<div class="footer">${tr('Your data stays on this device.')}<br>
+    <button class="link" onclick="exportData()">${tr('Back up data')}</button> · <label class="link" for="restore">${tr('Restore backup')}</label>
     <input id="restore" type="file" accept="application/json,.json" hidden onchange="importData(this.files[0]);this.value=''"></div>`;
 }
 
@@ -441,12 +594,12 @@ async function scanPhoto(file) {
   if (!file) return;
   const setStatus = m => { scan.status = m; const el = document.getElementById('scan-status'); if (el) el.textContent = m; };
   try {
-    setStatus('Loading text reader…');
+    setStatus(tr('Loading text reader…'));
     if (!window.Tesseract) await new Promise((ok, fail) => {
       const el = document.createElement('script');
       el.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
       el.integrity = 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F'; el.crossOrigin = 'anonymous';
-      el.onload = ok; el.onerror = () => fail(new Error('Could not load the text reader. Check your internet connection.'));
+      el.onload = ok; el.onerror = () => fail(new Error(tr('Could not load the text reader. Check your internet connection.')));
       document.head.append(el);
     });
     // Downscale big phone photos: faster OCR, same accuracy for label text.
@@ -454,12 +607,12 @@ async function scanPhoto(file) {
     const cv = document.createElement('canvas'); cv.width = img.width * k; cv.height = img.height * k;
     cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
     ocrWorker ??= Tesseract.createWorker(['spa', 'eng'], 1, { // store the promise so parallel scans share one worker
-      logger: m => m.status === 'recognizing text' && setStatus(`Reading text… ${Math.round(m.progress * 100)}%`),
+      logger: m => m.status === 'recognizing text' && setStatus(tr('Reading text… {n}%', { n: Math.round(m.progress * 100) })),
     }).catch(e => { ocrWorker = undefined; throw e; }); // allow a retry after a failed load
     const { data } = await (await ocrWorker).recognize(cv);
-    scan = { text: data.text.trim(), status: data.text.trim() ? '' : 'No text found. Try a closer, sharper photo.', checked: true };
+    scan = { text: data.text.trim(), status: data.text.trim() ? '' : tr('No text found. Try a closer, sharper photo.'), checked: true };
   } catch (e) {
-    scan.status = e.message || 'Could not read the photo.';
+    scan.status = e.message || tr('Could not read the photo.');
   }
   if (view === 'scan') render();
 }
@@ -469,18 +622,24 @@ function scanView() {
   let result = '';
   if (found) {
     const worst = found.some(f => f.level === 'avoid') ? 'avoid' : found.some(f => f.level === 'caution') ? 'limit' : 'ok';
-    const title = { avoid: 'Not suitable', limit: 'Check the amount', ok: found.length ? 'Fine for you' : 'No FODMAP ingredients found' }[worst];
+    const title = tr({ avoid: 'Not suitable', limit: 'Check the amount', ok: found.length ? 'Fine for you' : 'No FODMAP ingredients found' }[worst]);
     result = `<div class="verdict ${worst}">${title}</div>
-      ${found.length ? `<div class="list">${found.map(f => `<div class="row"><div class="row-main">${f.n}<div class="row-sub">${[f.g && GROUPS[f.g], f.why].filter(Boolean).join(' · ')}</div></div>
-        <span class="pill ${{ avoid: 'avoid', caution: 'limit', ok: 'ok' }[f.level]}">${{ avoid: 'Avoid', caution: 'Caution', ok: 'OK' }[f.level]}</span></div>`).join('')}</div>` : ''}
-      <div class="small" style="margin:0 4px 12px">Only ingredients the app knows are checked, and photo reading can miss words. Check the text above if something looks off.</div>`;
+      ${found.length ? `<div class="list">${found.map(f => `<div class="row"><div class="row-main">${tr(f.n)}<div class="row-sub">${[f.g && tr(GROUPS[f.g]), f.why && tr(f.why)].filter(Boolean).join(' · ')}</div></div>
+        <span class="pill ${{ avoid: 'avoid', caution: 'limit', ok: 'ok' }[f.level]}">${tr({ avoid: 'Avoid', caution: 'Caution', ok: 'OK' }[f.level])}</span></div>`).join('')}</div>` : ''}
+      <div class="small" style="margin:0 4px 12px">${tr('Only ingredients the app knows are checked, and photo reading can miss words. Check the text above if something looks off.')}</div>`;
   }
-  return `<div class="card"><p style="margin:0">Take a clear, close photo of the <b>ingredients list</b>. Works with Spanish and English labels.</p>
-      <label class="act" for="cam">Take photo</label><input id="cam" type="file" accept="image/*" capture="environment" hidden onchange="scanPhoto(this.files[0]);this.value=''">
-      <label class="link" for="pick" style="display:block;text-align:center">Choose from library</label><input id="pick" type="file" accept="image/*" hidden onchange="scanPhoto(this.files[0]);this.value=''">
+  return `<div class="card"><p style="margin:0">${tr('Take a clear, close photo of the <b>ingredients list</b>. Works with Spanish and English labels.')}</p>
+      <label class="act" for="cam">${tr('Take photo')}</label><input id="cam" type="file" accept="image/*" capture="environment" hidden onchange="scanPhoto(this.files[0]);this.value=''">
+      <label class="link" for="pick" style="display:block;text-align:center">${tr('Choose from library')}</label><input id="pick" type="file" accept="image/*" hidden onchange="scanPhoto(this.files[0]);this.value=''">
       <div id="scan-status" class="small" role="status" style="text-align:center">${esc(scan.status)}</div></div>
-    <h2>Ingredients text</h2><div class="card"><textarea id="ing" rows="5" oninput="scan.text=this.value" placeholder="Or type / paste the ingredients here" aria-label="Ingredients text">${esc(scan.text)}</textarea>
-      <button class="act" onclick="scan.checked=true;render()">Check ingredients</button></div>${result}`;
+    <h2>${tr('Ingredients text')}</h2><div class="card"><textarea id="ing" rows="5" oninput="scan.text=this.value" placeholder="${tr('Or type / paste the ingredients here')}" aria-label="${tr('Ingredients text')}">${esc(scan.text)}</textarea>
+      <button class="act" onclick="scan.checked=true;render()">${tr('Check ingredients')}</button></div>${result}`;
+}
+{ // every food, note, category, dose and scanner result has a Spanish text
+  const texts = [...Object.keys(CATEGORIES), ...FOODS.flatMap(f => [f.name, f.note]), ...CHALLENGES.flatMap(c => [...c.doses, c.alt]),
+    ...TRIGGERS.map(t => t.n), ...Object.values(GROUPS), ...LEVEL, ...SYMPTOMS].filter(Boolean);
+  const missing = texts.filter(t => !(t in ES));
+  check(!missing.length, 'Spanish missing: ' + missing.slice(0, 5).join('; '));
 }
 { // self-checks for the matcher
   const names = t => checkIngredients(t).map(f => f.n).join('|');
@@ -502,9 +661,14 @@ function render(keepFocus) {
     document.getElementById('list').replaceWith(tmp.querySelector('#list'));
     return;
   }
-  app.innerHTML = (FAILED.length ? `<div class="banner" style="background:var(--red-bg);color:var(--red)">Self-check failed: ${FAILED.join(', ')}. Results may be wrong.</div>` : '')
+  document.documentElement.lang = LANG;
+  document.getElementById('disc').textContent = tr('Low FODMAP guide for SIBO / IBS · not a substitute for your doctor or dietitian');
+  document.getElementById('lang').innerHTML = [['en', 'EN'], ['es', 'ES']].map(([l, t]) => `<button aria-pressed="${LANG === l}" lang="${l}" onclick="setLang('${l}')" aria-label="${l === 'es' ? 'Español' : 'English'}">${t}</button>`).join('');
+  document.getElementById('lang').setAttribute('aria-label', tr('Language'));
+  for (const [v, l] of [['foods', 'Foods'], ['scan', 'Scan'], ['plan', 'My Plan']]) document.getElementById('l-' + v).textContent = tr(l);
+  app.innerHTML = (FAILED.length ? `<div class="banner" style="background:var(--red-bg);color:var(--red)">${tr('Self-check failed: {m}. Results may be wrong.', { m: FAILED.join(', ') })}</div>` : '')
     + { foods: foodsView, plan: planView, scan: scanView }[view]();
-  document.getElementById('title').textContent = { foods: 'Foods', plan: 'My Plan', scan: 'Scan Label' }[view];
+  document.getElementById('title').textContent = tr({ foods: 'Foods', plan: 'My Plan', scan: 'Scan Label' }[view]);
   for (const v of ['foods', 'scan', 'plan']) document.getElementById('t-' + v).setAttribute('aria-selected', v === view);
 }
 function tab(v) { view = v; render(); }
@@ -523,7 +687,7 @@ function undoScore(id) {
   t.scores.pop(); t.days.pop(); delete t.end;
   save(); render();
 }
-function resetTest(id) { if (confirm('Delete this test\'s results?')) { delete S.tests[id]; save(); render(); } }
+function resetTest(id) { if (confirm(tr("Delete this test's results?"))) { delete S.tests[id]; save(); render(); } }
 render();
 </script>
 </body>
