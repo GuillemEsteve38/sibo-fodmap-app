@@ -12,7 +12,7 @@ A small web app for following the low FODMAP diet, for people with SIBO or IBS. 
 - **Scan Label:** take a photo of an ingredients list. The text is read on your phone and checked against a list of FODMAP ingredients in Spanish and English, including E-numbers for polyols. You get a verdict and the ingredients that caused it. You can also type or paste ingredients.
 - **My Plan:** the three phases of the diet.
   1. **Eliminate:** day counter and progress for the 2–6 week low FODMAP phase.
-  2. **Reintroduce:** 10 tests (lactose, fructose, sorbitol, mannitol, fructose + sorbitol, GOS, wheat bread, wheat pasta, onion, garlic). Each runs 3 days with increasing doses. You log symptoms each day, the test stops at moderate symptoms, and then there are 4 rest days.
+  2. **Reintroduce:** 10 tests (lactose, fructose, sorbitol, mannitol, fructose + sorbitol, GOS, wheat bread, wheat pasta, onion, garlic). Each runs 3 days with increasing doses. You log symptoms once a day (with undo for today's entry), the test stops at moderate symptoms, and then there are 4 rest days.
   3. **Personalise:** your results. The Foods and Scan tabs then mark foods as tolerated, small portions or avoid, based on your own tests.
 - Light and dark mode, iPhone and Android home-screen install.
 
@@ -29,8 +29,9 @@ Install it on the home screen. iPhone Safari can delete website data after 7 day
 
 - Your diet progress is stored only on your device (`localStorage`). There is no account, no server and no tracking.
 - Label photos are read on the device. They are never uploaded.
-- The first scan downloads the open-source OCR library [Tesseract.js](https://github.com/naptha/tesseract.js) and its Spanish and English language data from the jsDelivr CDN. This needs an internet connection.
-- Clearing your browser data deletes your progress. There is no backup yet.
+- The first scan downloads the open-source OCR library [Tesseract.js](https://github.com/naptha/tesseract.js) 5.1.1 and its Spanish and English language data from the jsDelivr CDN. This needs an internet connection. The main script is pinned with a Subresource Integrity hash, so the browser refuses it if the file is ever changed. To upgrade the version, update the hash too.
+- Clearing your browser data deletes your progress. Use **My Plan → Back up data** to save a backup file, and **Restore backup** to load it again, for example on a new phone.
+- On iPhone, the home-screen app and Safari keep separate data. Use the one you installed.
 
 ## Sources
 
@@ -57,6 +58,6 @@ Run it locally with any static file server, for example:
 python -m http.server 8080
 ```
 
-Then open http://localhost:8080. The app runs self-checks on load; open the browser console to see any failures.
+Then open http://localhost:8080. The app runs self-checks on every load. If one fails, a red banner appears at the top of the app and the error is logged to the console.
 
 To publish, push to `main`. GitHub Pages deploys it in about a minute.

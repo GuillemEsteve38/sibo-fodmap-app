@@ -115,6 +115,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>My Plan</button>
 </nav>
 <script>
+// Self-checks run on every load; a failure shows a red banner (see render) and logs to the console.
+const FAILED = [];
+const check = (ok, msg = 'unnamed check') => ok || (FAILED.push(msg), console.error('Self-check failed:', msg));
+
 // Levels at a typical serving: 0 low, 1 moderate (portion-limited), 2 high.
 // Sources: UK hospital "IBS and the Low FODMAP diet" sheet and SEEN / Hospital La Paz "Dieta baja en FODMAPs"; where they disagree the stricter rating is used.
 // shortcut: ~170 hand-entered foods; for exact safe portions use the Monash University FODMAP app.
@@ -211,7 +215,7 @@ const CHALLENGES = [
   { id: 'oni', g: 'Fr', food: 'Onion', doses: ['¼ onion', '⅓ onion', '½ onion'] },
   { id: 'gar', g: 'Fr', food: 'Garlic', doses: ['½ clove', '¾ clove', '1 clove'] },
 ];
-console.assert(CHALLENGES.every(c => FOODS.some(f => f.name === c.food)), 'challenge food missing from FOODS');
+check(CHALLENGES.every(c => FOODS.some(f => f.name === c.food)), 'challenge food missing from FOODS');
 const SYMPTOMS = ['None', 'Mild', 'Moderate', 'Severe'];
 const WASHOUT_DAYS = 4;
 
@@ -222,18 +226,49 @@ function outcome(scores) {
   if (i > 0) return { result: 'partial', upTo: i - 1 };
   return scores.length >= 3 ? { result: 'pass' } : null;
 }
-console.assert(outcome([]) === null && outcome([0, 1]) === null);
-console.assert(outcome([2]).result === 'fail' && outcome([0, 0, 0]).result === 'pass');
-console.assert(outcome([1, 3]).result === 'partial' && outcome([1, 3]).upTo === 0);
+check(outcome([]) === null && outcome([0, 1]) === null, 'outcome: unfinished');
+check(outcome([2]).result === 'fail' && outcome([0, 0, 0]).result === 'pass', 'outcome: fail/pass');
+check(outcome([1, 3]).result === 'partial' && outcome([1, 3]).upTo === 0, 'outcome: partial');
 
 const today = () => new Date().toLocaleDateString('sv'); // YYYY-MM-DD in local time
 const addDays = (d, n) => { const x = new Date(d + 'T00:00'); x.setDate(x.getDate() + n); return x.toLocaleDateString('sv'); };
 const daysSince = d => Math.round((new Date(today() + 'T00:00') - new Date(d + 'T00:00')) / 864e5);
 
-let S;
-try { S = JSON.parse(localStorage.getItem('fodmap')) } catch { }
-S = S || { phase: 'elim', elimStart: today(), tests: {} };
+const isDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+// Trust boundary: stored data and imported backups must have this exact shape.
+const validState = x => !!x && typeof x === 'object' && ['elim', 'reintro', 'pers'].includes(x.phase) && isDate(x.elimStart)
+  && !!x.tests && typeof x.tests === 'object' && Object.entries(x.tests).every(([id, t]) => CHALLENGES.some(c => c.id === id)
+    && isDate(t?.start) && Array.isArray(t.scores) && t.scores.length <= 3 && t.scores.every(v => Number.isInteger(v) && v >= 0 && v <= 3)
+    && (t.end === undefined || isDate(t.end)) && (t.days === undefined || (Array.isArray(t.days) && t.days.every(isDate))));
+check(validState({ phase: 'elim', elimStart: '2026-01-01', tests: { lac: { start: '2026-01-02', scores: [0, 2], end: '2026-01-03' } } }), 'validState: good');
+check(!validState({ phase: 'elim', elimStart: '2026-01-01', tests: { lac: { start: '2026-01-02', scores: [9] } } }), 'validState: bad score');
+
+function loadState() {
+  const raw = localStorage.getItem('fodmap');
+  let x; try { x = JSON.parse(raw) } catch { }
+  if (x && typeof x === 'object' && !isDate(x.elimStart)) x.elimStart = today(); // repair a cleared start date
+  if (validState(x)) return x;
+  if (raw) localStorage.setItem('fodmap-unreadable', raw); // never overwrite data we could not read
+  return { phase: 'elim', elimStart: today(), tests: {} };
+}
+let S = loadState();
 const save = () => localStorage.setItem('fodmap', JSON.stringify(S));
+navigator.storage?.persist?.(); // ask the browser not to clear our data (Android/desktop; iPhone keeps it for home-screen apps)
+// Another open copy of the app saved: use its data so we do not overwrite it.
+addEventListener('storage', e => { if (e.key === 'fodmap') { S = loadState(); render(); } });
+
+function exportData() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
+  a.download = `fodmap-backup-${today()}.json`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+async function importData(file) {
+  if (!file) return;
+  let x; try { x = JSON.parse(await file.text()) } catch { }
+  if (!validState(x)) return alert('This file is not a valid backup from this app.');
+  if (confirm('Replace your current data with this backup?')) { S = x; save(); render(); }
+}
 let view = 'foods';
 
 // Group status once all its challenges are finished: 'ok', 'limit', 'avoid', or undefined.
@@ -267,7 +302,7 @@ function foodsView() {
   const list = FOODS.filter(f => f.name.toLowerCase().includes(q) && (lvSel === '' || String(f.level) === lvSel) && (ct === '' || f.cat === ct));
   const cats = [...new Set(list.map(f => f.cat))];
   return `<div class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5" stroke-linecap="round"/></svg>
-      <input id="q" type="search" value="${q}" oninput="render(true)" placeholder="Search foods" aria-label="Search foods"></div>
+      <input id="q" type="search" value="${esc(q)}" oninput="render(true)" placeholder="Search foods" aria-label="Search foods"></div>
     <div class="seg" role="group" aria-label="Level">${[['', 'All'], ...LEVEL.map((l, i) => [String(i), l])].map(([v, l]) =>
       `<button aria-pressed="${lvSel === v}" onclick="lvSel='${v}';render()">${l}</button>`).join('')}</div>
     <select id="ct" onchange="render(true)" aria-label="Category"><option value="">All categories</option>${Object.keys(CATEGORIES).map(c => `<option ${ct === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
@@ -287,20 +322,24 @@ const badge = c => `<div class="badge" aria-hidden="true">${{ L: 'L', F: 'F', S:
 function challengeCard(c, active, washoutUntil) {
   const t = S.tests[c.id];
   const head = pill => `<div class="row" style="padding:0"> ${badge(c)}<div class="row-main"><b>${c.food}</b><div class="row-sub">${GROUPS[c.g]}</div></div>${pill || ''}</div>`;
+  const loggedToday = t?.days?.at(-1) === today();
+  const undo = loggedToday ? `<button class="link" onclick="undoScore('${c.id}')">Undo today's entry</button> · ` : '';
   if (t?.end) {
     const o = outcome(t.scores), [cls, label] = RESULT[o.result];
     return `<div class="card">${head(`<span class="pill ${cls}">${label}</span>`)}
       ${o.result === 'partial' ? `<div class="small" style="margin-top:8px">Fine up to ${c.doses[o.upTo]}</div>` : ''}
-      <button class="link" onclick="resetTest('${c.id}')">Redo test</button></div>`;
+      ${undo}<button class="link" onclick="resetTest('${c.id}')">Redo test</button></div>`;
   }
   if (t) {
     const day = t.scores.length;
-    return `<div class="card">${head(`<span class="pill you" style="margin:0">Day ${day + 1} of 3</span>`)}
+    return `<div class="card">${head(`<span class="pill you" style="margin:0">Day ${loggedToday ? day : day + 1} of 3</span>`)}
       <div class="steps">${c.doses.map((d, i) => `<span class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</span>`).join('')}</div>
-      <p style="margin-top:12px">Today eat <b>${c.doses[day]}</b>. Keep the rest of your diet low FODMAP.</p>
+      ${loggedToday
+        ? `<p style="margin-top:12px">Today's symptoms saved: <b>${SYMPTOMS[t.scores.at(-1)]}</b>. Come back tomorrow for day ${day + 1}: <b>${c.doses[day]}</b>.</p>`
+        : `<p style="margin-top:12px">Today eat <b>${c.doses[day]}</b>. Keep the rest of your diet low FODMAP.</p>
       <div class="small">How are your symptoms today? (bloating, pain, gas, bowel changes)</div>
-      <div class="sym">${SYMPTOMS.map((s, i) => `<button class="s${i}" onclick="logScore('${c.id}',${i})">${s}</button>`).join('')}</div>
-      <button class="link danger" onclick="resetTest('${c.id}')">Cancel test</button></div>`;
+      <div class="sym">${SYMPTOMS.map((s, i) => `<button class="s${i}" onclick="logScore('${c.id}',${i})">${s}</button>`).join('')}</div>`}
+      ${undo}<button class="link danger" onclick="resetTest('${c.id}')">Cancel test</button></div>`;
   }
   const blocked = active || washoutUntil > today();
   return `<div class="card">${head()}<div class="steps">${c.doses.map(d => `<span>${d}</span>`).join('')}</div>
@@ -320,7 +359,7 @@ function planView() {
         : d >= 14 ? 'Past the 2-week minimum. If your symptoms are well controlled, you can move on to reintroduction.'
         : `${14 - d} more day${14 - d === 1 ? '' : 's'} until the 2-week minimum.`}</p>
       <button class="act" onclick="setPhase('reintro')">Start reintroduction</button></div>
-      <div class="list"><div class="row"><label class="row-main" for="es">Started on</label><input id="es" type="date" value="${S.elimStart}" onchange="S.elimStart=this.value;save();render()"></div></div>
+      <div class="list"><div class="row"><label class="row-main" for="es">Started on</label><input id="es" type="date" value="${S.elimStart}" max="${today()}" onchange="if (this.value && this.value <= today()) { S.elimStart = this.value; save() } render()"></div></div>
       <h2>How it works</h2><div class="card small">Eat only <span class="pill l0">Low</span> foods and keep <span class="pill l1">Moderate</span> foods to the listed portion.
       This phase usually lasts 2–6 weeks (4–6 weeks is often recommended). It is a short-term diagnostic step, not a forever diet.</div>`;
   } else if (S.phase === 'reintro') {
@@ -344,7 +383,9 @@ function planView() {
       <p>Avoid only the specific foods and amounts that cause symptoms, and retest them every few months. Tolerance often changes.</p>
       <p style="margin:0">The Foods tab shows a "You:" tag based on your results.</p></div>`;
   }
-  return html + `<div class="footer">Your data stays on this device.</div>`;
+  return html + `<div class="footer">Your data stays on this device.<br>
+    <button class="link" onclick="exportData()">Back up data</button> · <label class="link" for="restore">Restore backup</label>
+    <input id="restore" type="file" accept="application/json,.json" hidden onchange="importData(this.files[0]);this.value=''"></div>`;
 }
 
 // ---- Label scanner: find FODMAP ingredients in an ingredients list (English + Spanish) ----
@@ -375,7 +416,7 @@ const TRIGGERS = [
   { n: 'Cauliflower', g: 'M', re: 'cauliflower|coliflor' },
 ].map(t => ({ ...t, rx: new RegExp(`(?:^|[^a-z0-9])(?:${t.re})(?![a-z0-9])`) }));
 // Phrases that contain a trigger word but are fine.
-const SAFE = /sin lactosa|lactose[ -]?free|libre de lactosa|leche de (?:coco|almendras?|arroz)|(?:coconut|almond|rice) milk|lecitina de soja|soy(?:a|bean)? lecithin|salsa de soja|soy sauce|proteina de soja|soy protein|aceite de soja|soybean oil|judias verdes|green beans|(?:vanilla|cocoa|coffee) beans|ajonjoli/g;
+const SAFE = /(?:leche|yogur|yogh?urt|queso|nata|suero|lactosuero)(?: [a-z]+){0,3} (?:sin|libre de) lactosa|lactose[ -]?free(?: [a-z]+){0,2} (?:milk|yogh?urt|cheese|cream|whey)|(?:milk|yogh?urt|cheese|cream|whey)(?: [a-z]+){0,2} lactose[ -]?free|sin lactosa|lactose[ -]?free|libre de lactosa|(?:leche|bebida) de (?:coco|almendras?|arroz|soja|avena)|(?:coconut|almond|rice|soy|soya|oat) (?:milk|drink)|lecitina de soja|soy(?:a|bean)? lecithin|salsa de soja|soy sauce|proteina de soja|soy protein|aceite de soja|soybean oil|judias verdes|green beans|(?:vanilla|cocoa|coffee) beans|ajonjoli/g;
 const normText = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\be[\s-]?(\d{3})\b/g, 'e$1').replace(/\s+/g, ' ');
 
 function checkIngredients(text) {
@@ -394,7 +435,7 @@ function checkIngredients(text) {
 }
 
 let scan = { text: '', status: '', checked: false }, ocrWorker;
-const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
 async function scanPhoto(file) {
   if (!file) return;
@@ -404,6 +445,7 @@ async function scanPhoto(file) {
     if (!window.Tesseract) await new Promise((ok, fail) => {
       const el = document.createElement('script');
       el.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      el.integrity = 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F'; el.crossOrigin = 'anonymous';
       el.onload = ok; el.onerror = () => fail(new Error('Could not load the text reader. Check your internet connection.'));
       document.head.append(el);
     });
@@ -411,10 +453,10 @@ async function scanPhoto(file) {
     const img = await createImageBitmap(file), k = Math.min(1, 2000 / Math.max(img.width, img.height));
     const cv = document.createElement('canvas'); cv.width = img.width * k; cv.height = img.height * k;
     cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-    ocrWorker ??= await Tesseract.createWorker(['spa', 'eng'], 1, {
+    ocrWorker ??= Tesseract.createWorker(['spa', 'eng'], 1, { // store the promise so parallel scans share one worker
       logger: m => m.status === 'recognizing text' && setStatus(`Reading text… ${Math.round(m.progress * 100)}%`),
-    });
-    const { data } = await ocrWorker.recognize(cv);
+    }).catch(e => { ocrWorker = undefined; throw e; }); // allow a retry after a failed load
+    const { data } = await (await ocrWorker).recognize(cv);
     scan = { text: data.text.trim(), status: data.text.trim() ? '' : 'No text found. Try a closer, sharper photo.', checked: true };
   } catch (e) {
     scan.status = e.message || 'Could not read the photo.';
@@ -442,12 +484,15 @@ function scanView() {
 }
 { // self-checks for the matcher
   const names = t => checkIngredients(t).map(f => f.n).join('|');
-  console.assert(names('Harina de TRIGO, azúcar, cebolla en polvo') === 'Onion|Wheat', 'es basic');
-  console.assert(names('Leche de coco, azúcar. Puede contener trazas de leche.') === '', 'safe phrase + traces');
-  console.assert(names('Arroz, sal, bajo en grasa, fosfato') === '', 'no false garlic/FOS');
-  console.assert(checkIngredients('rice, sugar, salt, wheat flour')[0].pos === 3, 'wheat position');
-  console.assert(names('Sweetener: E-420, sugar-free gum base') === 'Sorbitol', 'E-number');
-  console.assert(names('Agua, jarabe de glucosa-fructosa, zumo concentrado de manzana') === 'Fructose / fructose syrup|Fruit juice concentrate|Apple / pear', 'syrups');
+  check(names('Harina de TRIGO, azúcar, cebolla en polvo') === 'Onion|Wheat', 'es basic');
+  check(names('Leche de coco, azúcar. Puede contener trazas de leche.') === '', 'safe phrase + traces');
+  check(names('Arroz, sal, bajo en grasa, fosfato') === '', 'no false garlic/FOS');
+  check(checkIngredients('rice, sugar, salt, wheat flour')[0].pos === 3, 'wheat position');
+  check(names('Sweetener: E-420, sugar-free gum base') === 'Sorbitol', 'E-number');
+  check(names('Leche sin lactosa, azúcar') === '' && names('Leche desnatada en polvo sin lactosa') === '', 'lactose-free es');
+  check(names('lactose-free milk, sugar') === '' && names('Leche de soja, agua') === '', 'lactose-free en / soy drink');
+  check(names('Leche, azúcar') === 'Milk / lactose', 'plain milk still flagged');
+  check(names('Agua, jarabe de glucosa-fructosa, zumo concentrado de manzana') === 'Fructose / fructose syrup|Fruit juice concentrate|Apple / pear', 'syrups');
 }
 
 function render(keepFocus) {
@@ -457,7 +502,8 @@ function render(keepFocus) {
     document.getElementById('list').replaceWith(tmp.querySelector('#list'));
     return;
   }
-  app.innerHTML = { foods: foodsView, plan: planView, scan: scanView }[view]();
+  app.innerHTML = (FAILED.length ? `<div class="banner" style="background:var(--red-bg);color:var(--red)">Self-check failed: ${FAILED.join(', ')}. Results may be wrong.</div>` : '')
+    + { foods: foodsView, plan: planView, scan: scanView }[view]();
   document.getElementById('title').textContent = { foods: 'Foods', plan: 'My Plan', scan: 'Scan Label' }[view];
   for (const v of ['foods', 'scan', 'plan']) document.getElementById('t-' + v).setAttribute('aria-selected', v === view);
 }
@@ -465,8 +511,16 @@ function tab(v) { view = v; render(); }
 function setPhase(p) { S.phase = p; save(); render(); }
 function startTest(id) { S.tests[id] = { start: today(), scores: [] }; save(); render(); }
 function logScore(id, s) {
-  const t = S.tests[id]; t.scores.push(s);
+  const t = S.tests[id];
+  if (t.end || t.days?.at(-1) === today()) return; // one entry per day: stops a double tap from logging two days
+  t.scores.push(s); (t.days ||= []).push(today());
   if (outcome(t.scores)) t.end = today();
+  save(); render();
+}
+function undoScore(id) {
+  const t = S.tests[id];
+  if (t.days?.at(-1) !== today()) return; // only today's entry can be undone
+  t.scores.pop(); t.days.pop(); delete t.end;
   save(); render();
 }
 function resetTest(id) { if (confirm('Delete this test\'s results?')) { delete S.tests[id]; save(); render(); } }
