@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="FODMAP">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Low FODMAP Guide</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #fff; --text: #000; --sub: #6c6c70; --sep: #c6c6c8; --fill: #7676801f;
+    --tint: #248a5a; --tint-soft: #248a5a1f; --on-tint: #fff; --seg-on: #fff;
+    --green: #1f8a47; --green-bg: #34c75926; --amber: #9a6700; --amber-bg: #ffcc0040;
+    --orange: #b35400; --orange-bg: #ff950033; --red: #c4261d; --red-bg: #ff3b3026; --blue: #0a5fd6; --blue-bg: #007aff1f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000; --card: #1c1c1e; --text: #fff; --sub: #98989f; --sep: #38383a; --fill: #7676803d;
+      --tint: #30d158; --tint-soft: #30d15826; --on-tint: #000; --seg-on: #636366;
+      --green: #30d158; --amber: #ffd60a; --orange: #ff9f0a; --red: #ff6961; --blue: #64a8ff;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { padding: calc(env(safe-area-inset-top) + 20px) 20px 4px; max-width: 640px; margin: auto; }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: .01em; margin: 0; }
+  .disclaimer { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 640px; margin: auto; }
+  h2 { font-size: 13px; font-weight: 400; text-transform: uppercase; color: var(--sub); margin: 22px 16px 6px; letter-spacing: .02em; }
+  p { margin: 0 0 10px; }
+
+  /* Tab bar */
+  nav { position: fixed; inset: auto 0 0 0; display: flex; justify-content: center; gap: 48px; padding: 6px 0 calc(env(safe-area-inset-bottom) + 6px);
+    background: color-mix(in srgb, var(--card) 80%, transparent); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: .5px solid var(--sep); z-index: 10; }
+  nav button { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; color: var(--sub); font: 500 10px -apple-system, system-ui, sans-serif; padding: 4px 16px; cursor: pointer; }
+  nav button svg { width: 26px; height: 26px; }
+  nav button[aria-selected=true] { color: var(--tint); }
+
+  /* Grouped lists & cards */
+  .card { background: var(--card); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .list { background: var(--card); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; position: relative; min-height: 44px; }
+  .row + .row::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; border-top: .5px solid var(--sep); }
+  .row-main { flex: 1; min-width: 0; }
+  .row-sub { font-size: 14px; color: var(--sub); margin-top: 1px; }
+  .small { font-size: 14px; color: var(--sub); }
+  details.card summary { font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details.card summary::after { content: "›"; color: var(--sub); font-size: 22px; transition: transform .2s; }
+  details[open].card summary::after { transform: rotate(90deg); }
+  details.card ul { margin: 10px 0 0; padding-left: 18px; }
+  details.card li { margin-bottom: 6px; }
+
+  /* Pills */
+  .pill { display: inline-block; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 100px; white-space: nowrap; }
+  .l0, .ok { background: var(--green-bg); color: var(--green); }
+  .l1, .limit { background: var(--amber-bg); color: var(--amber); }
+  .l2, .avoid { background: var(--red-bg); color: var(--red); }
+  .you { background: var(--blue-bg); color: var(--blue); margin-top: 6px; }
+  .none { background: var(--fill); color: var(--sub); }
+
+  /* Controls */
+  .search { position: relative; margin-bottom: 10px; }
+  .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--sub); }
+  input[type=search] { width: 100%; font: inherit; padding: 9px 12px 9px 34px; border: 0; border-radius: 10px; background: var(--fill); color: var(--text); outline: none; -webkit-appearance: none; }
+  select { font: inherit; font-size: 15px; padding: 7px 30px 7px 12px; border: 0; border-radius: 100px; background: var(--fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center / 10px;
+    color: var(--text); -webkit-appearance: none; appearance: none; margin-bottom: 10px; }
+  input[type=date] { font: inherit; color: var(--tint); background: var(--fill); border: 0; border-radius: 8px; padding: 6px 10px; }
+  .seg { display: flex; background: var(--fill); border-radius: 9px; padding: 2px; margin-bottom: 14px; }
+  .seg button { flex: 1; border: 0; background: none; color: var(--text); font: 500 13px -apple-system, system-ui, sans-serif; padding: 7px 4px; border-radius: 7px; cursor: pointer; }
+  .seg button[aria-pressed=true] { background: var(--seg-on); box-shadow: 0 3px 8px #0000001f, 0 3px 1px #0000000a; font-weight: 600; }
+  button.act { display: block; width: 100%; background: var(--tint); color: var(--on-tint); border: 0; border-radius: 12px; padding: 13px; font: 600 17px -apple-system, system-ui, sans-serif; margin-top: 12px; cursor: pointer; }
+  button.act:disabled { background: var(--fill); color: var(--sub); }
+  button.link { background: none; border: 0; color: var(--tint); font: inherit; font-size: 15px; padding: 8px 0 0; cursor: pointer; }
+  button.link.danger { color: var(--red); }
+  button:active { opacity: .6; }
+
+  /* Plan */
+  .big { font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+  .bar { position: relative; height: 8px; background: var(--fill); border-radius: 4px; margin: 14px 0 4px; }
+  .bar > div { height: 100%; background: var(--tint); border-radius: 4px; }
+  .bar i { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--sub); }
+  .ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); position: relative; height: 16px; }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .badge { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--tint-soft); color: var(--tint); flex: none; }
+  .steps { display: flex; gap: 6px; margin-top: 10px; }
+  .steps span { flex: 1; text-align: center; font-size: 13px; padding: 6px 4px; border-radius: 8px; background: var(--fill); }
+  .steps span.now { background: var(--tint); color: var(--on-tint); font-weight: 600; }
+  .steps span.done { background: var(--tint-soft); color: var(--tint); }
+  .sym { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .sym button { border: 0; border-radius: 12px; padding: 14px 8px; font: 600 16px -apple-system, system-ui, sans-serif; cursor: pointer; }
+  .s0 { background: var(--green-bg); color: var(--green); } .s1 { background: var(--amber-bg); color: var(--amber); }
+  .s2 { background: var(--orange-bg); color: var(--orange); } .s3 { background: var(--red-bg); color: var(--red); }
+  .banner { background: var(--blue-bg); color: var(--blue); border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; font-size: 15px; font-weight: 500; }
+  .footer { text-align: center; font-size: 13px; color: var(--sub); margin-top: 20px; }
+</style>
+</head>
+<body>
+<header><h1 id="title">Foods</h1><div class="disclaimer">Low FODMAP guide for SIBO / IBS · not a substitute for your doctor or dietitian</div></header>
+<main id="app"></main>
+<nav role="tablist">
+  <button role="tab" id="t-foods" onclick="tab('foods')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19l8-8"/></svg>Foods</button>
+  <button role="tab" id="t-plan" onclick="tab('plan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>My Plan</button>
+</nav>
+<script>
+// Levels at a typical serving: 0 low, 1 moderate (portion-limited), 2 high.
+// Sources: UK hospital "IBS and the Low FODMAP diet" sheet and SEEN / Hospital La Paz "Dieta baja en FODMAPs"; where they disagree the stricter rating is used.
+// shortcut: ~170 hand-entered foods; for exact safe portions use the Monash University FODMAP app.
+const GROUPS = { F: 'Fructose', L: 'Lactose', Fr: 'Fructans', GOS: 'GOS', S: 'Sorbitol', M: 'Mannitol', FS: 'Fructose + sorbitol' };
+const LEVEL = ['Low', 'Moderate', 'High'];
+const CATEGORIES = {
+  'Grains & starches': [
+    ['Rice', 0], ['Oats / porridge', 0], ['Quinoa', 0], ['Buckwheat', 0], ['Millet', 0], ['Polenta / cornflour', 0], ['Potato', 0], ['Tapioca', 0],
+    ['Rice noodles', 0], ['Gluten-free pasta', 0, '', 'Not made from lentils or chickpeas'], ['Gluten-free bread', 0],
+    ['100% spelt sourdough', 0, '', 'Only real 100% spelt sourdough; other spelt bread is high'], ['Corn tortillas / taco shells', 0],
+    ['Rice cakes / oatcakes / corn cakes', 0], ['Cornflakes / rice cereal', 0], ['Popcorn / plain crisps', 0],
+    ['Wheat bread', 2, 'Fr', 'White, wholemeal, multigrain, pitta, bagels, naan. Normal sourdough: small amounts may be ok'],
+    ['Wheat pasta', 2, 'Fr', 'Includes fresh pasta and gnocchi'], ['Couscous / semolina / bulgur', 2, 'Fr'],
+    ['Rye bread / crispbread', 2, 'Fr'], ['Barley', 2, 'Fr'], ['Egg / udon / ramen noodles', 2, 'Fr'],
+    ['Wheat cakes, biscuits, pastries', 2, 'Fr', 'Croissants, muffins, pies, pizza bases'], ['Breaded or battered foods', 2, 'Fr'],
+    ['Bran cereals / muesli', 2, 'Fr', 'Muesli often has dried fruit too'], ['Chickpea / lentil pasta', 2, 'GOS'],
+  ],
+  'Vegetables': [
+    ['Carrot', 0], ['Cucumber', 0], ['Lettuce / rocket / endive', 0], ['Spinach / chard', 0], ['Tomato', 0], ['Zucchini', 0], ['Bell pepper', 0],
+    ['Eggplant', 0], ['Green beans', 0], ['Bok choy', 0], ['Bean sprouts / bamboo shoots', 0], ['Radish', 0], ['Parsnip / swede / turnip', 0],
+    ['White or red cabbage', 0], ['Olives', 0], ['Seaweed / nori', 0], ['Spring onion (green part)', 0, '', 'Good onion substitute'],
+    ['Leek (green part)', 0], ['Chives', 0],
+    ['Avocado', 1, 'S', 'Max ¼ avocado a day'], ['Sweet potato', 1, 'M', 'Small portion (under ½ cup)'], ['Broccoli', 1, 'Fr', 'Small portion; heads better than stalks'],
+    ['Celery', 1, 'M', 'Max ~5 cm stick'], ['Butternut squash / pumpkin', 1, 'M', 'Small portion (¼ cup)'], ['Brussels sprouts', 1, 'Fr', 'Small portion'],
+    ['Savoy cabbage', 1, 'Fr', 'Small portion'], ['Beetroot', 1, 'Fr GOS', 'Small portion'], ['Sweetcorn', 1, 'S', 'Small portion'],
+    ['Fennel', 1, 'Fr M', 'Small portion'], ['Okra', 1, 'Fr', 'Small portion'], ['Canned artichoke hearts', 1, 'Fr', 'Small portion'],
+    ['Mangetout / snow peas', 1, 'Fr M', 'Small portion'], ['Canned lentils', 1, 'GOS', 'Small portion (¼ cup), rinsed'],
+    ['Canned chickpeas', 1, 'GOS', 'Small portion (¼ cup), rinsed. Tinned is better tolerated than home-cooked'],
+    ['Garlic', 2, 'Fr'], ['Onion', 2, 'Fr', 'Red, white, Spanish, shallots'], ['Leek (white part)', 2, 'Fr'], ['Spring onion (white part)', 2, 'Fr'],
+    ['Artichoke / Jerusalem artichoke', 2, 'Fr'], ['Asparagus', 2, 'F Fr'], ['Cauliflower', 2, 'M'], ['Mushrooms', 2, 'M'], ['Peas', 2, 'GOS Fr'],
+    ['Beans (kidney, butter, broad, soy, black-eyed)', 2, 'GOS'], ['Baked beans', 2, 'GOS'], ['Home-cooked lentils / chickpeas', 2, 'GOS'],
+    ['Split peas', 2, 'GOS'], ['Hummus', 2, 'GOS'],
+  ],
+  'Fruit': [
+    ['Banana (firm)', 0], ['Blueberries', 0], ['Strawberries', 0], ['Raspberries', 0], ['Kiwi', 0], ['Orange', 0], ['Mandarin / clementine', 0],
+    ['Lemon / lime', 0], ['Pineapple (fresh)', 0], ['Grapes', 0, '', 'A small handful at a time'], ['Cantaloupe / honeydew melon', 0],
+    ['Passion fruit', 0], ['Papaya', 0], ['Rhubarb', 0], ['Cranberries', 0],
+    ['Ripe banana', 1, 'Fr'], ['Grapefruit', 1, 'Fr', 'Max ½ small'], ['Lychee', 1, 'S', 'Max 5'], ['Pomegranate', 1, 'Fr', 'Max ½ small'],
+    ['Coconut (dried)', 1, 'S', 'Max 3 tbsp'],
+    ['Apple', 2, 'F S'], ['Pear', 2, 'F S'], ['Mango', 2, 'F'], ['Watermelon', 2, 'F Fr M'], ['Cherries', 2, 'F S'], ['Peach / nectarine', 2, 'S M'],
+    ['Apricot', 2, 'S'], ['Plum / prune', 2, 'S'], ['Blackberries', 2, 'S'], ['Figs', 2, 'F Fr'], ['Dates', 2, 'Fr'], ['Persimmon (kaki)', 2, 'Fr'],
+    ['Dried fruit (raisins, sultanas, dried apricots)', 2, 'F Fr'], ['Tinned fruit in juice', 2, 'F'],
+    ['Fruit juice (apple, tropical)', 2, 'F', 'Juice of suitable fruit: max 100 ml'],
+  ],
+  'Meat, fish, eggs & alternatives': [
+    ['Beef / pork / lamb', 0], ['Chicken / turkey / duck / rabbit', 0], ['Fish (white or oily)', 0], ['Shellfish', 0],
+    ['Tinned fish in oil or brine', 0], ['Eggs', 0], ['Firm tofu', 0], ['Tempeh', 0], ['Quorn', 0, '', 'Check for onion/garlic'],
+    ['Soya mince (TVP)', 0],
+    ['Sausages / processed meats', 1, 'Fr', 'Often contain onion, garlic or wheat; check label'], ['Silken tofu', 2, 'GOS'],
+  ],
+  'Dairy & alternatives': [
+    ['Lactose-free milk', 0], ['Lactose-free yogurt', 0], ['Hard / aged cheese', 0, '', 'Cheddar, parmesan, cured manchego'],
+    ['Brie / camembert / feta / mozzarella', 0], ['Butter', 0], ['Cream / crème fraîche', 0, '', 'Small amounts'], ['Almond milk', 0],
+    ['Rice milk', 0, '', 'Max 200 ml'], ['Soy milk (from soy protein)', 0], ['Coconut yogurt', 0], ['Dark chocolate', 0, '', '75%+ cocoa'],
+    ['Oat milk', 1, 'Fr', 'Max 50 ml'], ['Milk chocolate / white chocolate', 1, 'L', 'Max 30 g'],
+    ['Cow\'s milk', 2, 'L', 'Also goat and sheep. Max 50 ml (¼ cup) in a drink is usually ok'], ['Regular yogurt', 2, 'L', 'Max 2 tbsp'],
+    ['Soft fresh cheese', 2, 'L', 'Ricotta, cottage, quark, mascarpone: max 2 tbsp'], ['Ice cream', 2, 'L', 'Max 1 scoop'],
+    ['Custard / dairy desserts', 2, 'L', 'Max 2 tbsp'], ['Kefir', 2, 'L'], ['Condensed / evaporated / powdered milk', 2, 'L'],
+    ['Soy milk (whole bean)', 2, 'GOS'],
+  ],
+  'Nuts & seeds': [
+    ['Peanuts / peanut butter', 0, '', 'A small handful'], ['Walnuts', 0], ['Macadamias', 0], ['Pecans', 0], ['Pine nuts', 0],
+    ['Pumpkin / sunflower / sesame / flax seeds', 0],
+    ['Almonds', 1, 'GOS', 'Max 10'], ['Hazelnuts', 1, 'GOS', 'Max 10'], ['Cashews', 2, 'GOS Fr'], ['Pistachios', 2, 'GOS Fr'],
+  ],
+  'Sweeteners, sauces & seasoning': [
+    ['Sugar (white / brown)', 0], ['Maple syrup', 0], ['Golden syrup', 0], ['Jam from suitable fruit', 0, '', 'Check sugar-free jams for polyols'],
+    ['Stevia / aspartame / sucralose', 0], ['Garlic-infused oil', 0, '', 'Strained; fructans do not pass into oil'],
+    ['Asafoetida (hing)', 0, '', 'Gives onion flavour'], ['Herbs & spices', 0], ['Mustard', 0], ['Vinegar (white / rice)', 0],
+    ['Balsamic vinegar', 1, 'F', 'Max 1 tbsp'],
+    ['Honey', 2, 'F'], ['Agave syrup', 2, 'F'], ['Glucose-fructose syrup / HFCS', 2, 'F'],
+    ['Sugar-free gum / mints / sweets', 2, 'S M', 'Sorbitol, mannitol, xylitol, isomalt, maltitol'],
+    ['Onion / garlic powder or salt', 2, 'Fr'], ['Stock cubes / gravy / ready sauces', 2, 'Fr', 'Usually contain onion or garlic'],
+    ['Added fibre / prebiotics', 2, 'Fr', 'Inulin, FOS, oligofructose, chicory root'],
+  ],
+  'Drinks': [
+    ['Water', 0], ['Tea / coffee', 0], ['Most alcohol', 0, '', 'Low FODMAP, but alcohol itself can worsen symptoms'],
+    ['Chamomile / fennel / chicory / dandelion / chai tea', 2, 'Fr'], ['Rum / dessert wine', 2, 'F'],
+  ],
+};
+const FOODS = Object.entries(CATEGORIES).flatMap(([cat, foods]) =>
+  foods.map(([name, level, g = '', note = '']) => ({ cat, name, level, groups: g.split(' ').filter(Boolean), note })));
+
+// SEEN protocol: one FODMAP at a time, 3 days of increasing dose (day 2 = in between), then 4 rest days.
+const CHALLENGES = [
+  { id: 'lac', g: 'L', food: 'Cow\'s milk', doses: ['½ glass', '1 glass', '1½ glasses'], alt: 'or yogurt: 1 → 1½ → 2' },
+  { id: 'fru', g: 'F', food: 'Honey', doses: ['1 tbsp', '1½ tbsp', '2 tbsp'], alt: 'or mango: ½ → ¾ → 1' },
+  { id: 'sor', g: 'S', food: 'Avocado', doses: ['½ avocado', '¾ avocado', '1 avocado'], alt: 'or blackberries: 5 → 8 → 10' },
+  { id: 'man', g: 'M', food: 'Mushrooms', doses: ['½ cup', '¾ cup', '1 cup'], alt: 'or cauliflower: same amounts' },
+  { id: 'fs', g: 'FS', food: 'Apple', doses: ['½ apple', '¾ apple', '1 apple'], alt: 'or pear: same amounts' },
+  { id: 'gos', g: 'GOS', food: 'Canned lentils', doses: ['½ cup', '1 cup', '1 deep plate'], alt: 'or canned chickpeas: same amounts. If sensitive, test on alternate days' },
+  { id: 'whe', g: 'Fr', food: 'Wheat bread', doses: ['1 slice wholemeal', '2 slices', '3 slices'], alt: 'If sensitive, test on alternate days' },
+  { id: 'pas', g: 'Fr', food: 'Wheat pasta', doses: ['1 cup wholemeal', '1½ cups', '1 full plate'] },
+  { id: 'oni', g: 'Fr', food: 'Onion', doses: ['¼ onion', '⅓ onion', '½ onion'] },
+  { id: 'gar', g: 'Fr', food: 'Garlic', doses: ['½ clove', '¾ clove', '1 clove'] },
+];
+console.assert(CHALLENGES.every(c => FOODS.some(f => f.name === c.food)), 'challenge food missing from FOODS');
+const SYMPTOMS = ['None', 'Mild', 'Moderate', 'Severe'];
+const WASHOUT_DAYS = 4;
+
+// Moderate+ symptoms stop the challenge: on day 1 = not tolerated, later = tolerated up to the previous dose.
+function outcome(scores) {
+  const i = scores.findIndex(s => s >= 2);
+  if (i === 0) return { result: 'fail' };
+  if (i > 0) return { result: 'partial', upTo: i - 1 };
+  return scores.length >= 3 ? { result: 'pass' } : null;
+}
+console.assert(outcome([]) === null && outcome([0, 1]) === null);
+console.assert(outcome([2]).result === 'fail' && outcome([0, 0, 0]).result === 'pass');
+console.assert(outcome([1, 3]).result === 'partial' && outcome([1, 3]).upTo === 0);
+
+const today = () => new Date().toLocaleDateString('sv'); // YYYY-MM-DD in local time
+const addDays = (d, n) => { const x = new Date(d + 'T00:00'); x.setDate(x.getDate() + n); return x.toLocaleDateString('sv'); };
+const daysSince = d => Math.round((new Date(today() + 'T00:00') - new Date(d + 'T00:00')) / 864e5);
+
+let S;
+try { S = JSON.parse(localStorage.getItem('fodmap')) } catch { }
+S = S || { phase: 'elim', elimStart: today(), tests: {} };
+const save = () => localStorage.setItem('fodmap', JSON.stringify(S));
+let view = 'foods';
+
+// Group status once all its challenges are finished: 'ok', 'limit', 'avoid', or undefined.
+function groupStatus(g) {
+  const tests = CHALLENGES.filter(c => c.g === g).map(c => S.tests[c.id]);
+  if (!tests.every(t => t?.end)) return;
+  const res = tests.map(t => outcome(t.scores).result);
+  if (res.includes('fail')) return 'avoid';
+  return res.includes('partial') ? 'limit' : 'ok';
+}
+
+function personalTag(f) {
+  if (!f.level || !f.groups.length) return '';
+  const own = CHALLENGES.find(c => c.food === f.name && S.tests[c.id]?.end); // the test food itself: its own result wins
+  const st = own ? [{ pass: 'ok', partial: 'limit', fail: 'avoid' }[outcome(S.tests[own.id].scores).result]] : f.groups.map(groupStatus);
+  if (st.includes('avoid')) return '<span class="pill you">You: avoid</span>';
+  if (st.includes(undefined)) return '';
+  return st.includes('limit') ? '<span class="pill you">You: small portions</span>' : '<span class="pill you">You: tolerated</span>';
+}
+
+let lvSel = ''; // level filter for the segmented control
+
+function foodRow(f) {
+  const sub = [f.groups.map(g => GROUPS[g]).join(', '), f.note].filter(Boolean).join(' · ');
+  return `<div class="row"><div class="row-main"><div>${f.name}</div>${sub ? `<div class="row-sub">${sub}</div>` : ''}${personalTag(f)}</div>
+    <span class="pill l${f.level}">${LEVEL[f.level]}</span></div>`;
+}
+
+function foodsView() {
+  const q = (document.getElementById('q')?.value || '').toLowerCase(), ct = document.getElementById('ct')?.value ?? '';
+  const list = FOODS.filter(f => f.name.toLowerCase().includes(q) && (lvSel === '' || String(f.level) === lvSel) && (ct === '' || f.cat === ct));
+  const cats = [...new Set(list.map(f => f.cat))];
+  return `<div class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5" stroke-linecap="round"/></svg>
+      <input id="q" type="search" value="${q}" oninput="render(true)" placeholder="Search foods" aria-label="Search foods"></div>
+    <div class="seg" role="group" aria-label="Level">${[['', 'All'], ...LEVEL.map((l, i) => [String(i), l])].map(([v, l]) =>
+      `<button aria-pressed="${lvSel === v}" onclick="lvSel='${v}';render()">${l}</button>`).join('')}</div>
+    <select id="ct" onchange="render(true)" aria-label="Category"><option value="">All categories</option>${Object.keys(CATEGORIES).map(c => `<option ${ct === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+    <details class="card"><summary>Check labels for hidden FODMAPs</summary><ul class="small">
+      <li>Onion or garlic in any form: powder, salt, extract, purée. Common in stocks, sauces, crisps, ready meals.</li>
+      <li>Added fibre: inulin, FOS, oligofructose, chicory root.</li>
+      <li>Fructose: glucose-fructose syrup, high-fructose corn syrup, agave, honey, fruit juice concentrate.</li>
+      <li>Polyols: sorbitol (E420), mannitol (E421), isomalt (E953), maltitol (E965), xylitol (E967). Found in sugar-free sweets, gum, protein powders.</li>
+      <li>Small amounts of wheat as a thickener or flavouring are fine.</li></ul></details>
+    <div id="list">${cats.map(c => `<h2>${c}</h2><div class="list">${list.filter(f => f.cat === c).map(foodRow).join('')}</div>`).join('')
+      || '<div class="card small">No match. Check the Monash FODMAP app.</div>'}</div>`;
+}
+
+const RESULT = { pass: ['ok', 'Tolerated'], partial: ['limit', 'Small amounts'], fail: ['avoid', 'Keep low'] };
+const badge = c => `<div class="badge" aria-hidden="true">${{ L: 'L', F: 'F', S: 'S', M: 'M', FS: 'F+S', GOS: 'GOS', Fr: 'FOS' }[c.g]}</div>`;
+
+function challengeCard(c, active, washoutUntil) {
+  const t = S.tests[c.id];
+  const head = pill => `<div class="row" style="padding:0"> ${badge(c)}<div class="row-main"><b>${c.food}</b><div class="row-sub">${GROUPS[c.g]}</div></div>${pill || ''}</div>`;
+  if (t?.end) {
+    const o = outcome(t.scores), [cls, label] = RESULT[o.result];
+    return `<div class="card">${head(`<span class="pill ${cls}">${label}</span>`)}
+      ${o.result === 'partial' ? `<div class="small" style="margin-top:8px">Fine up to ${c.doses[o.upTo]}</div>` : ''}
+      <button class="link" onclick="resetTest('${c.id}')">Redo test</button></div>`;
+  }
+  if (t) {
+    const day = t.scores.length;
+    return `<div class="card">${head(`<span class="pill you" style="margin:0">Day ${day + 1} of 3</span>`)}
+      <div class="steps">${c.doses.map((d, i) => `<span class="${i < day ? 'done' : i === day ? 'now' : ''}">${d}</span>`).join('')}</div>
+      <p style="margin-top:12px">Today eat <b>${c.doses[day]}</b>. Keep the rest of your diet low FODMAP.</p>
+      <div class="small">How are your symptoms today? (bloating, pain, gas, bowel changes)</div>
+      <div class="sym">${SYMPTOMS.map((s, i) => `<button class="s${i}" onclick="logScore('${c.id}',${i})">${s}</button>`).join('')}</div>
+      <button class="link danger" onclick="resetTest('${c.id}')">Cancel test</button></div>`;
+  }
+  const blocked = active || washoutUntil > today();
+  return `<div class="card">${head()}<div class="steps">${c.doses.map(d => `<span>${d}</span>`).join('')}</div>
+    ${c.alt ? `<div class="small" style="margin-top:8px">${c.alt}</div>` : ''}
+    <button class="act" ${blocked ? 'disabled' : ''} onclick="startTest('${c.id}')">Start test</button></div>`;
+}
+
+function planView() {
+  const phases = [['elim', 'Eliminate'], ['reintro', 'Reintroduce'], ['pers', 'Personalise']];
+  let html = `<div class="seg" role="group" aria-label="Phase">${phases.map(([k, l], i) => `<button aria-pressed="${S.phase === k}" onclick="setPhase('${k}')">${i + 1}. ${l}</button>`).join('')}</div>`;
+  if (S.phase === 'elim') {
+    const d = daysSince(S.elimStart), pct = Math.min(100, (d + 1) / 42 * 100);
+    html += `<div class="card"><div class="small">Low FODMAP diet</div><div class="big">Day ${d + 1}</div>
+      <div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="42" aria-valuenow="${d + 1}"><div style="width:${pct}%"></div><i style="left:33.3%"></i><i style="left:66.6%"></i></div>
+      <div class="ticks"><span style="left:0;transform:none">Start</span><span style="left:33.3%">2 wk</span><span style="left:66.6%">4 wk</span><span style="right:0;transform:none">6 wk</span></div>
+      <p style="margin-top:14px">${d >= 42 ? 'Over 6 weeks. If symptoms have not improved, talk to your doctor before continuing.'
+        : d >= 14 ? 'Past the 2-week minimum. If your symptoms are well controlled, you can move on to reintroduction.'
+        : `${14 - d} more day${14 - d === 1 ? '' : 's'} until the 2-week minimum.`}</p>
+      <button class="act" onclick="setPhase('reintro')">Start reintroduction</button></div>
+      <div class="list"><div class="row"><label class="row-main" for="es">Started on</label><input id="es" type="date" value="${S.elimStart}" onchange="S.elimStart=this.value;save();render()"></div></div>
+      <h2>How it works</h2><div class="card small">Eat only <span class="pill l0">Low</span> foods and keep <span class="pill l1">Moderate</span> foods to the listed portion.
+      This phase usually lasts 2–6 weeks (4–6 weeks is often recommended). It is a short-term diagnostic step, not a forever diet.</div>`;
+  } else if (S.phase === 'reintro') {
+    const active = CHALLENGES.some(c => S.tests[c.id] && !S.tests[c.id].end);
+    const lastEnd = Object.values(S.tests).map(t => t.end).filter(Boolean).sort().pop();
+    const washoutUntil = lastEnd ? addDays(lastEnd, WASHOUT_DAYS) : '';
+    if (washoutUntil > today() && !active) html += `<div class="banner">Rest days: next test from ${washoutUntil}</div>`;
+    html += `<details class="card"><summary>How reintroduction works</summary><ul class="small">
+      <li>Test one FODMAP group at a time over 3 days with increasing doses, staying low FODMAP otherwise.</li>
+      <li>Stop if symptoms are moderate or worse.</li>
+      <li>Then rest ${WASHOUT_DAYS} days on your low FODMAP diet (symptom-free) before the next test.</li>
+      <li>Even if a food is tolerated, keep avoiding it until phase 3 so it does not mask the next test.</li></ul></details>`;
+    html += CHALLENGES.map(c => challengeCard(c, active, washoutUntil)).join('');
+  } else {
+    html += `<h2>Your results</h2><div class="list">${CHALLENGES.map(c => {
+        const t = S.tests[c.id], o = t?.end && outcome(t.scores);
+        const [cls, label] = o ? RESULT[o.result] : ['none', 'Not tested'];
+        return `<div class="row">${badge(c)}<div class="row-main">${c.food}<div class="row-sub">${GROUPS[c.g]}${o?.result === 'partial' ? ` · up to ${c.doses[o.upTo]}` : ''}</div></div><span class="pill ${cls}">${label}</span></div>`;
+      }).join('')}</div>
+      <h2>What to do now</h2><div class="card small"><p>Bring back the foods you tolerated. For groups that gave symptoms, test other foods from that group with the same 3-day scheme: you may tolerate some of them, or smaller amounts.</p>
+      <p>Avoid only the specific foods and amounts that cause symptoms, and retest them every few months. Tolerance often changes.</p>
+      <p style="margin:0">The Foods tab shows a "You:" tag based on your results.</p></div>`;
+  }
+  return html + `<div class="footer">Your data stays on this device.</div>`;
+}
+
+function render(keepFocus) {
+  const app = document.getElementById('app');
+  if (keepFocus && view === 'foods') { // re-render only the list so the search box keeps focus
+    const tmp = document.createElement('div'); tmp.innerHTML = foodsView();
+    document.getElementById('list').replaceWith(tmp.querySelector('#list'));
+    return;
+  }
+  app.innerHTML = view === 'foods' ? foodsView() : planView();
+  document.getElementById('title').textContent = view === 'foods' ? 'Foods' : 'My Plan';
+  for (const v of ['foods', 'plan']) document.getElementById('t-' + v).setAttribute('aria-selected', v === view);
+}
+function tab(v) { view = v; render(); }
+function setPhase(p) { S.phase = p; save(); render(); }
+function startTest(id) { S.tests[id] = { start: today(), scores: [] }; save(); render(); }
+function logScore(id, s) {
+  const t = S.tests[id]; t.scores.push(s);
+  if (outcome(t.scores)) t.end = today();
+  save(); render();
+}
+function resetTest(id) { if (confirm('Delete this test\'s results?')) { delete S.tests[id]; save(); render(); } }
+render();
+</script>
+</body>
+</html>

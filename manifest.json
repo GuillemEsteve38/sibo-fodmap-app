@@ -1,0 +1,9 @@
+{
+  "name": "Low FODMAP Guide",
+  "short_name": "FODMAP",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#f2f2f7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
