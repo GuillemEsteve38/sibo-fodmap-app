@@ -246,8 +246,26 @@ const ES = {
   'Sugar-free gum / mints / sweets': 'Chicles, caramelos y golosinas sin azúcar', 'Sorbitol, mannitol, xylitol, isomalt, maltitol': 'Sorbitol, manitol, xilitol, isomalt, maltitol',
   'Onion / garlic powder or salt': 'Cebolla o ajo en polvo, sal de ajo', 'Stock cubes / gravy / ready sauces': 'Pastillas de caldo / salsas preparadas', 'Usually contain onion or garlic': 'Suelen llevar cebolla o ajo',
   'Added fibre / prebiotics': 'Fibra añadida / prebióticos', 'Inulin, FOS, oligofructose, chicory root': 'Inulina, FOS, oligofructosa, raíz de achicoria',
-  'Water': 'Agua', 'Tea / coffee': 'Té / café', 'Most alcohol': 'La mayoría de bebidas alcohólicas', 'Low FODMAP, but alcohol itself can worsen symptoms': 'Bajas en FODMAP, pero el alcohol en sí puede empeorar los síntomas',
-  'Chamomile / fennel / chicory / dandelion / chai tea': 'Manzanilla, hinojo, achicoria, diente de león o chai', 'Rum / dessert wine': 'Ron / vino dulce',
+  'Water / sparkling water': 'Agua / agua con gas', 'Fizzy drinks can add bloating': 'Las bebidas con gas pueden aumentar la hinchazón',
+  'Coffee (espresso, filter, instant)': 'Café (expreso, de filtro, soluble)', 'Caffeine can trigger symptoms in some people': 'La cafeína puede provocar síntomas en algunas personas',
+  'Black tea (weak)': 'Té negro (suave)', 'Strong brews are higher in fructans': 'Las infusiones fuertes tienen más fructanos', 'Green / white tea': 'Té verde / blanco',
+  'Peppermint tea': 'Infusión de menta', 'Ginger tea (fresh ginger)': 'Infusión de jengibre (fresco)',
+  'Hot chocolate with lactose-free or plant milk': 'Chocolate caliente con leche sin lactosa o bebida vegetal', 'Cocoa itself is low FODMAP': 'El cacao en sí es bajo en FODMAP',
+  'Soft drinks with sugar (cola, lemonade)': 'Refrescos con azúcar (cola, limonada)', 'Check it is sugar, not glucose-fructose syrup': 'Comprueba que lleve azúcar y no jarabe de glucosa-fructosa',
+  'Diet soft drinks': 'Refrescos light / zero', 'Avoid ones sweetened with sorbitol or other polyols': 'Evita los endulzados con sorbitol u otros polioles',
+  'Beer': 'Cerveza', 'Max 1 glass; alcohol itself can irritate the gut': 'Máximo 1 vaso; el alcohol en sí puede irritar el intestino',
+  'Dry wine (red, white, sparkling)': 'Vino seco (tinto, blanco, espumoso)', 'Gin / vodka / whisky': 'Ginebra / vodka / whisky',
+  'Max 1 measure; avoid sugary or juice mixers': 'Máximo 1 medida; no lo mezcles con zumos ni refrescos azucarados',
+  'Orange / cranberry juice': 'Zumo de naranja / arándano rojo', 'Max 100 ml (½ glass)': 'Máximo 100 ml (½ vaso)', 'Coconut water': 'Agua de coco', 'Kombucha': 'Kombucha',
+  'Small glass; check for added fruit juice or inulin': 'Un vaso pequeño; revisa si lleva zumo de fruta o inulina', 'Smoothies': 'Batidos de fruta (smoothies)',
+  'Only with suitable fruit and lactose-free yogurt or plant milk': 'Solo con fruta permitida y yogur sin lactosa o bebida vegetal',
+  'Fruit tea blends': 'Infusiones de frutas', 'Check for apple, pear or dried fruit pieces': 'Revisa si llevan manzana, pera o trozos de fruta desecada',
+  'Protein shakes / meal-replacement drinks': 'Batidos de proteínas / sustitutivos de comida', 'Often contain whey, inulin or polyols; check label': 'Suelen llevar suero de leche, inulina o polioles; revisa la etiqueta',
+  'Latte / cappuccino / café con leche': 'Café con leche / capuchino', 'Fine with lactose-free or plant milk': 'Sin problema con leche sin lactosa o bebida vegetal',
+  "Hot chocolate with cow's milk": 'Chocolate caliente con leche de vaca', 'Strong black tea / oolong / chai': 'Té negro fuerte / oolong / chai',
+  'Chamomile / fennel / dandelion tea': 'Manzanilla / hinojo / diente de león', 'Coffee substitutes (chicory, malt)': 'Sucedáneos de café (achicoria, malta)',
+  'Malted drinks (Horlicks, Ovaltine)': 'Bebidas malteadas (tipo Ovomaltina)', 'Contain barley or wheat malt': 'Llevan malta de cebada o trigo',
+  'Cider': 'Sidra', 'Rum': 'Ron', 'Dessert wine / port / sweet sherry': 'Vino dulce / oporto / jerez dulce',
   // Reintroduction doses
   '½ glass': '½ vaso', '1 glass': '1 vaso', '1½ glasses': '1½ vasos', 'or yogurt: 1 → 1½ → 2': 'o yogur: 1 → 1½ → 2', '1 tbsp': '1 cucharada', '1½ tbsp': '1½ cucharadas', '2 tbsp': '2 cucharadas',
   'or mango: ½ → ¾ → 1': 'o mango: ½ → ¾ → 1', '½ avocado': '½ aguacate', '¾ avocado': '¾ aguacate', '1 avocado': '1 aguacate', 'or blackberries: 5 → 8 → 10': 'o moras: 5 → 8 → 10',
@@ -273,7 +291,7 @@ function setLang(l) { LANG = l; localStorage.setItem('fodmap-lang', l); render()
 
 // Levels at a typical serving: 0 low, 1 moderate (portion-limited), 2 high.
 // Sources: UK hospital "IBS and the Low FODMAP diet" sheet and SEEN / Hospital La Paz "Dieta baja en FODMAPs"; where they disagree the stricter rating is used.
-// shortcut: ~170 hand-entered foods; for exact safe portions use the Monash University FODMAP app.
+// shortcut: ~200 hand-entered foods; for exact safe portions use the Monash University FODMAP app.
 const GROUPS = { F: 'Fructose', L: 'Lactose', Fr: 'Fructans', GOS: 'GOS', S: 'Sorbitol', M: 'Mannitol', FS: 'Fructose + sorbitol' };
 const LEVEL = ['Low', 'Moderate', 'High'];
 const CATEGORIES = {
@@ -347,8 +365,24 @@ const CATEGORIES = {
     ['Added fibre / prebiotics', 2, 'Fr', 'Inulin, FOS, oligofructose, chicory root'],
   ],
   'Drinks': [
-    ['Water', 0], ['Tea / coffee', 0], ['Most alcohol', 0, '', 'Low FODMAP, but alcohol itself can worsen symptoms'],
-    ['Chamomile / fennel / chicory / dandelion / chai tea', 2, 'Fr'], ['Rum / dessert wine', 2, 'F'],
+    ['Water / sparkling water', 0, '', 'Fizzy drinks can add bloating'],
+    ['Coffee (espresso, filter, instant)', 0, '', 'Caffeine can trigger symptoms in some people'],
+    ['Black tea (weak)', 0, '', 'Strong brews are higher in fructans'], ['Green / white tea', 0], ['Peppermint tea', 0], ['Ginger tea (fresh ginger)', 0],
+    ['Hot chocolate with lactose-free or plant milk', 0, '', 'Cocoa itself is low FODMAP'],
+    ['Soft drinks with sugar (cola, lemonade)', 0, '', 'Check it is sugar, not glucose-fructose syrup'],
+    ['Diet soft drinks', 0, '', 'Avoid ones sweetened with sorbitol or other polyols'],
+    ['Beer', 0, '', 'Max 1 glass; alcohol itself can irritate the gut'],
+    ['Dry wine (red, white, sparkling)', 0, '', 'Max 1 glass; alcohol itself can irritate the gut'],
+    ['Gin / vodka / whisky', 0, '', 'Max 1 measure; avoid sugary or juice mixers'],
+    ['Orange / cranberry juice', 1, 'F', 'Max 100 ml (½ glass)'], ['Coconut water', 1, 'S', 'Max 100 ml (½ glass)'],
+    ['Kombucha', 1, '', 'Small glass; check for added fruit juice or inulin'],
+    ['Smoothies', 1, 'F', 'Only with suitable fruit and lactose-free yogurt or plant milk'],
+    ['Fruit tea blends', 1, 'F', 'Check for apple, pear or dried fruit pieces'],
+    ['Protein shakes / meal-replacement drinks', 1, 'L Fr S', 'Often contain whey, inulin or polyols; check label'],
+    ['Latte / cappuccino / café con leche', 2, 'L', 'Fine with lactose-free or plant milk'], ['Hot chocolate with cow\'s milk', 2, 'L'],
+    ['Strong black tea / oolong / chai', 2, 'Fr'], ['Chamomile / fennel / dandelion tea', 2, 'Fr'],
+    ['Coffee substitutes (chicory, malt)', 2, 'Fr'], ['Malted drinks (Horlicks, Ovaltine)', 2, 'Fr', 'Contain barley or wheat malt'],
+    ['Cider', 2, 'F S'], ['Rum', 2, 'F'], ['Dessert wine / port / sweet sherry', 2, 'F'],
   ],
 };
 const FOODS = Object.entries(CATEGORIES).flatMap(([cat, foods]) =>
@@ -549,7 +583,7 @@ const TRIGGERS = [
   { n: 'Garlic', g: 'Fr', test: 'gar', re: 'garlic|ajos?' },
   { n: 'Wheat', g: 'Fr', test: 'whe', minor: true, re: 'wheat|trigo|semolina|semola|couscous|cuscus|bulgur|kamut|durum' },
   { n: 'Rye', g: 'Fr', minor: true, re: 'rye|centeno' },
-  { n: 'Barley', g: 'Fr', minor: true, re: 'barley|cebada' },
+  { n: 'Barley', g: 'Fr', minor: true, re: 'barley|cebada|malt|malta' },
   { n: 'Spelt', g: 'Fr', minor: true, re: 'spelt|espelta' },
   { n: 'Inulin / FOS / chicory', g: 'Fr', re: 'inulin|inulina|fos|fructo-?oligosacaridos|fructooligosaccharides?|oligofructosa|oligofructose|chicory|achicoria' },
   { n: 'Artichoke', g: 'Fr', re: 'artichokes?|alcachofas?' },
@@ -651,6 +685,7 @@ function scanView() {
   check(names('Leche sin lactosa, azúcar') === '' && names('Leche desnatada en polvo sin lactosa') === '', 'lactose-free es');
   check(names('lactose-free milk, sugar') === '' && names('Leche de soja, agua') === '', 'lactose-free en / soy drink');
   check(names('Leche, azúcar') === 'Milk / lactose', 'plain milk still flagged');
+  check(names('Agua, azúcar, extracto de malta, maltodextrina') === 'Barley', 'malt yes, maltodextrin no');
   check(names('Agua, jarabe de glucosa-fructosa, zumo concentrado de manzana') === 'Fructose / fructose syrup|Fruit juice concentrate|Apple / pear', 'syrups');
 }
 
