@@ -1,0 +1,27 @@
+name: Self-checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  selfcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright
+        run: |
+          npm install --prefix tools
+          ./tools/node_modules/.bin/playwright install --with-deps chromium
+      - name: Serve the app and run its self-checks
+        run: |
+          python3 -m http.server 8080 &
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:8080/index.html > /dev/null && break
+            sleep 0.25
+          done
+          node tools/selfcheck.mjs http://localhost:8080/index.html

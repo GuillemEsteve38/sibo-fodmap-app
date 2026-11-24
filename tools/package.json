@@ -1,0 +1,8 @@
+{
+  "name": "fodmap-tools",
+  "private": true,
+  "description": "CI-only dev dependency. The app itself has no dependencies.",
+  "devDependencies": {
+    "playwright": "^1"
+  }
+}

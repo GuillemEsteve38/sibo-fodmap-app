@@ -1,2 +1,4 @@
 *.pdf
 .claude/
+tools/node_modules/
+tools/package-lock.json

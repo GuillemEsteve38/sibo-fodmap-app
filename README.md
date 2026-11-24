@@ -1,8 +1,19 @@
 # Low FODMAP Guide
 
+[![Self-checks](https://github.com/GuillemEsteve38/sibo-fodmap-app/actions/workflows/selfcheck.yml/badge.svg)](https://github.com/GuillemEsteve38/sibo-fodmap-app/actions/workflows/selfcheck.yml)
+
 A small web app for following the low FODMAP diet, for people with SIBO or IBS. It tells you what you can eat, guides you through the reintroduction phases, and scans ingredient labels with your phone camera.
 
 **Try it:** https://guillemesteve38.github.io/sibo-fodmap-app/
+
+**Status:** feature-complete and in daily use. Updated when the food data or the protocol needs it.
+
+<!-- Screenshots: drop three phone screenshots in docs/ (foods list, a scan verdict, the reintroduce
+     calendar), then delete this comment and the one below to show them.
+| Foods | Scan a label | Reintroduce |
+|---|---|---|
+| ![Foods list](docs/foods.png) | ![Scan result](docs/scan.png) | ![Reintroduction calendar](docs/reintroduce.png) |
+-->
 
 > This app is general guidance, not medical advice. The low FODMAP diet works best with a doctor or dietitian. For SIBO it supports treatment; it does not replace it.
 
@@ -44,6 +55,37 @@ Food ratings and the reintroduction protocol come from:
 
 Where sources disagree, the stricter rating is used. For exact portions, use the [Monash University FODMAP app](https://www.monashfodmap.com/).
 
+## Tests
+
+The app checks itself. 19 self-checks run on every load, over the parts where a quiet mistake would
+matter most:
+
+- **The label matcher:** that `leche sin lactosa` and `lactose-free milk` pass while plain `leche`
+  is flagged, that `maltodextrina` is not read as malt, that `fosfato` is not read as FOS, that
+  `trazas de leche` is ignored, that polyol E-numbers are caught, and that each flagged ingredient
+  reports the right position in the list.
+- **The reintroduction state machine:** that an unfinished test has no result, that one moderate
+  score fails a test, that three clean days pass it, and that a partial result reports the last
+  dose tolerated.
+- **Restored backups:** that a backup file with an out-of-range symptom score is rejected instead
+  of corrupting your progress.
+- **The data itself:** no duplicate food names, every challenge food exists in `FOODS`, and every
+  food, note, dose and scanner result has Spanish text.
+
+If a check fails, the app shows a red banner instead of showing results that might be wrong.
+
+The same checks run in CI on every push: `tools/selfcheck.mjs` loads the app in headless Chromium
+and fails the build if any check failed or the page threw. Run it yourself with the app served at
+port 8080:
+
+```sh
+npm install --prefix tools
+./tools/node_modules/.bin/playwright install chromium
+node tools/selfcheck.mjs
+```
+
+Playwright is only used by CI. The app itself still has no dependencies.
+
 ## Development
 
 The whole app is one file, with no build step and no dependencies to install.
@@ -53,6 +95,8 @@ The whole app is one file, with no build step and no dependencies to install.
 | `index.html` | The app: styles, food data, Spanish translations (`ES`), reintroduction logic, label scanner |
 | `manifest.json` | Home-screen install settings |
 | `icon.svg`, `icon-*.png`, `apple-touch-icon.png` | App icons |
+| `tools/selfcheck.mjs` | Runs the app's self-checks in headless Chromium for CI |
+| `.github/workflows/selfcheck.yml` | Runs that on every push |
 
 Run it locally with any static file server, for example:
 
