@@ -8,7 +8,7 @@ A small web app for following the low FODMAP diet, for people with SIBO or IBS. 
 
 ## Features
 
-- **Foods:** about 200 foods rated Low, Moderate or High, with the FODMAP group (fructose, lactose, fructans, GOS, sorbitol, mannitol) and safe portions. Search, filter by level and category, plus a list of hidden FODMAPs to look for on labels.
+- **Foods:** about 290 foods rated Low, Moderate or High, with the FODMAP group (fructose, lactose, fructans, GOS, sorbitol, mannitol) and safe portions. Search, filter by level and category, plus a list of hidden FODMAPs to look for on labels.
 - **Scan Label:** take a photo of an ingredients list. The text is read on your phone and checked against a list of FODMAP ingredients in Spanish and English, including E-numbers for polyols. You get a verdict and the ingredients that caused it. You can also type or paste ingredients.
 - **My Plan:** the three phases of the diet.
   1. **Eliminate:** day counter and progress for the 2–6 week low FODMAP phase.
@@ -40,8 +40,9 @@ Food ratings and the reintroduction protocol come from:
 
 - *IBS and the Low FODMAP diet*, a UK hospital dietetics diet sheet.
 - *Dieta baja en FODMAPs*, Sociedad Española de Endocrinología y Nutrición (SEEN), Hospital La Paz, Madrid.
+- The [IBS Diets FODMAP food list](https://www.ibsdiets.org/fodmap-diet/fodmap-food-list/), for extra foods and portion sizes.
 
-Where the two disagree, the stricter rating is used. For exact portions, use the [Monash University FODMAP app](https://www.monashfodmap.com/).
+Where sources disagree, the stricter rating is used. For exact portions, use the [Monash University FODMAP app](https://www.monashfodmap.com/).
 
 ## Development
 
